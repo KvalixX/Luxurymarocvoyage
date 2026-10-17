@@ -1,0 +1,198 @@
+@import "tailwindcss";
+@config "../tailwind.config.ts";
+
+:root {
+  --font-outfit: "Aptos", "Segoe UI", Arial, sans-serif;
+  --font-inter: "Aptos", "Segoe UI", Arial, sans-serif;
+  --font-cormorant: Georgia, "Times New Roman", serif;
+  --font-playfair: Georgia, "Times New Roman", serif;
+  --background: #FDF8F2;
+  --foreground: #1A0F0A;
+  --terracotta: #DF6951;
+  --terracotta-hover: #c94e38;
+  --sand-gold: #C9963C;
+  --majorelle: #4045f0;
+  --morocco-dark: #1A0F0A;
+  --morocco-charcoal: #2D1F17;
+  --morocco-warm: #F7F0E6;
+  --morocco-cream: #FDF8F2;
+  --morocco-border: rgba(45, 31, 23, 0.08);
+}
+
+body {
+  background-color: var(--morocco-cream);
+  color: var(--morocco-dark);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Moroccan decorative patterns */
+.pattern-zellige {
+  background-color: #1A0F0A;
+  background-image: radial-gradient(rgba(201, 150, 60, 0.15) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+.bg-glass {
+  background: rgba(253, 248, 242, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(201, 150, 60, 0.18);
+}
+
+.bg-glass-dark {
+  background: rgba(26, 15, 10, 0.78);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Luxury card glow & transition */
+.luxury-card {
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 20px -4px rgba(26, 15, 10, 0.06), 0 1px 3px rgba(26, 15, 10, 0.04);
+}
+
+.luxury-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 36px -8px rgba(223, 105, 81, 0.14), 0 4px 12px -2px rgba(26, 15, 10, 0.06);
+}
+
+/* Refined Premium Card */
+.card-premium {
+  background: #ffffff;
+  border: 1px solid rgba(239, 229, 215, 0.85);
+  border-radius: 1rem;
+  box-shadow: 0 2px 10px -2px rgba(26, 15, 10, 0.04), 0 1px 2px rgba(26, 15, 10, 0.02);
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.card-premium:hover {
+  border-color: rgba(223, 105, 81, 0.3);
+  box-shadow: 0 14px 28px -6px rgba(223, 105, 81, 0.12), 0 4px 10px -2px rgba(26, 15, 10, 0.04);
+  transform: translateY(-3px);
+}
+
+/* Section Eyebrow Pill */
+.section-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  background-color: rgba(223, 105, 81, 0.08);
+  border: 1px solid rgba(223, 105, 81, 0.18);
+  color: #DF6951;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.625rem;
+}
+
+/* Buttons System */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #DF6951 0%, #c94e38 100%);
+  color: #ffffff;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px -1px rgba(223, 105, 81, 0.3);
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #c94e38 0%, #a83d2c 100%);
+  box-shadow: 0 6px 16px -2px rgba(223, 105, 81, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.75rem;
+  background: #F1A501;
+  color: #ffffff;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px -1px rgba(241, 165, 1, 0.28);
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background: #d89300;
+  box-shadow: 0 6px 16px -2px rgba(241, 165, 1, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.625rem;
+  background-color: #ffffff;
+  border: 1px solid #E2E8F0;
+  color: #334155;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.btn-outline:hover {
+  border-color: #DF6951;
+  color: #DF6951;
+  background-color: rgba(223, 105, 81, 0.04);
+  transform: translateY(-1px);
+}
+
+.btn-outline:active {
+  transform: translateY(0);
+}
+
+/* Gold Gradient Text */
+.text-gradient-gold {
+  background: linear-gradient(135deg, #DF6951 0%, #C9963C 60%, #E9C580 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Moroccan Arch curves */
+.rounded-arch {
+  border-top-left-radius: 9999px;
+  border-top-right-radius: 9999px;
+}
+
+/* Custom Luxury Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #F7F0E6;
+}
+::-webkit-scrollbar-thumb {
+  background: #DF6951;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #c94e38;
+}
