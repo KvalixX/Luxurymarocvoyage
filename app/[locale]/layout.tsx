@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+﻿import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
@@ -6,7 +6,14 @@ import { routing } from '@/lib/i18n/routing';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import WhatsAppButton from '@/components/layout/WhatsAppButton';
+import FreeQuoteButton from '@/components/layout/FreeQuoteButton';
+import { getTours } from '@/lib/queries/tours';
+import { getPopularDestinations } from '@/lib/queries/destinations';
+import { getUpcomingEvents } from '@/lib/queries/events';
+import { getLatestArticles } from '@/lib/queries/articles';
 import '@/app/globals.css';
+import { WishlistProvider } from '@/components/wishlist/WishlistProvider';
+import { localizedAlternates, localizedUrl } from '@/lib/seo/urls';
 
 interface LocaleLayoutProps {
   children: React.ReactNode;
@@ -32,7 +39,7 @@ export async function generateMetadata({
     es: 'Agencia receptiva de élite en Marrakech. Especialistas en circuitos privados por el desierto del Sáhara, excursiones exclusivas y viajes a medida por Marruecos.',
   };
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.luxurymarocvoyage.com';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://luxurymarocvoyage.com';
 
   return {
     metadataBase: new URL(siteUrl),
@@ -53,28 +60,27 @@ export async function generateMetadata({
       'circuitos privados marruecos',
     ],
     authors: [{ name: 'Luxurymarocvoyage' }],
-    alternates: {
-      canonical: `${siteUrl}/${locale}`,
-      languages: {
-        fr: `${siteUrl}/fr`,
-        en: `${siteUrl}/en`,
-        es: `${siteUrl}/es`,
-        'x-default': `${siteUrl}/fr`,
-      },
+    icons: {
+      icon: [
+        { url: '/logos/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+        { url: '/logos/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      ],
+      apple: '/logos/apple-touch-icon.png',
     },
+    alternates: localizedAlternates(locale, '/'),
     openGraph: {
       title: titles[locale] || titles.fr,
       description: descriptions[locale] || descriptions.fr,
-      url: `${siteUrl}/${locale}`,
+      url: localizedUrl(locale, '/'),
       siteName: 'Luxurymarocvoyage',
       locale: locale === 'en' ? 'en_US' : locale === 'es' ? 'es_ES' : 'fr_FR',
       type: 'website',
       images: [
         {
-          url: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=1200&q=80',
-          width: 1200,
-          height: 630,
-          alt: 'Voyage de luxe au Maroc',
+          url: `${siteUrl}/logos/logo2-Photoroom.png`,
+          width: 743,
+          height: 439,
+          alt: 'Luxury Maroc Voyage',
         },
       ],
     },
@@ -107,48 +113,66 @@ export default async function LocaleLayout({
   }
 
   const messages = await getMessages();
+  const [circuits, excursions, destinations, events, articles] = await Promise.all([
+    getTours(locale, { typeFilter: 'circuit', limit: 5 }).catch(() => []),
+    getTours(locale, { typeFilter: 'excursion', limit: 5 }).catch(() => []),
+    getPopularDestinations(locale, 6).catch(() => []),
+    getUpcomingEvents(locale, 4).catch(() => []),
+    getLatestArticles(locale, 4).catch(() => []),
+  ]);
 
   // Structured Data (Organization + TravelAgency Schema)
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://luxurymarocvoyage.com';
   const agencySchema = {
     '@context': 'https://schema.org',
     '@type': 'TravelAgency',
-    name: 'Luxurymarocvoyage',
-    url: 'https://www.luxurymarocvoyage.com',
-    logo: 'https://www.luxurymarocvoyage.com/logo.png',
-    image:
-      'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=1200&q=80',
-    description:
-      'Agence de voyage réceptive haut de gamme à Marrakech. Circuits privés au Maroc, bivouacs dans le Sahara et excursions exclusives.',
+    '@id': `${siteUrl}/#travel-agency`,
+    name: 'Luxury Maroc Voyage',
+    url: siteUrl,
+    logo: `${siteUrl}/logos/android-chrome-512x512.png`,
+    image: `${siteUrl}/logos/android-chrome-512x512.png`,
+    email: 'contact@luxurymarocvoyage.com',
+    telephone: '+212776715010',
+    description: locale === 'fr'
+      ? 'Agence de voyage à Marrakech spécialisée dans les circuits privés, excursions et voyages sur mesure au Maroc.'
+      : locale === 'es'
+        ? 'Agencia de viajes en Marrakech especializada en circuitos privados, excursiones y viajes a medida por Marruecos.'
+        : 'Marrakech travel agency specializing in private tours, excursions, and tailor-made trips in Morocco.',
+    sameAs: [
+      'https://www.instagram.com/luxurymarocvoyage/',
+      'https://www.tripadvisor.fr/Attraction_Review-g293734-d32981818-Reviews-Luxury_Maroc_Voyage-Marrakech_Marrakech_Safi.html',
+    ],
     address: {
       '@type': 'PostalAddress',
-      streetAddress: 'Boulevard Mohammed V, Guéliz',
+      streetAddress: 'Bureau N°5, 2ème étage, Lot, 359',
       addressLocality: 'Marrakech',
       postalCode: '40000',
       addressCountry: 'MA',
     },
-    geo: {
-      '@type': 'GeoCoordinates',
-      latitude: '31.6295',
-      longitude: '-7.9811',
-    },
-    telephone: '+212600000000',
-    priceRange: '$$$',
     openingHoursSpecification: [
       {
         '@type': 'OpeningHoursSpecification',
-        dayOfWeek: [
-          'Monday',
-          'Tuesday',
-          'Wednesday',
-          'Thursday',
-          'Friday',
-          'Saturday',
-          'Sunday',
-        ],
-        opens: '08:00',
-        closes: '20:00',
+        dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+        opens: '09:00',
+        closes: '19:00',
+      },
+      {
+        '@type': 'OpeningHoursSpecification',
+        dayOfWeek: 'Sunday',
+        opens: '10:00',
+        closes: '16:00',
       },
     ],
+  };
+  const websiteSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    '@id': `${siteUrl}/#website`,
+    name: 'Luxury Maroc Voyage',
+    alternateName: 'Luxurymarocvoyage',
+    url: siteUrl,
+    publisher: { '@id': `${siteUrl}/#travel-agency` },
+    inLanguage: locale,
   };
 
   return (
@@ -161,15 +185,26 @@ export default async function LocaleLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(agencySchema) }}
         />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+        />
       </head>
       <body className="min-h-screen flex flex-col bg-morocco-cream text-morocco-dark antialiased">
         <NextIntlClientProvider locale={locale} messages={messages}>
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer locale={locale} />
-          <WhatsAppButton />
+          <WishlistProvider>
+            <Header circuits={circuits} excursions={excursions} destinations={destinations} events={events} articles={articles} />
+            <main className="flex-1">{children}</main>
+            <Footer locale={locale} circuits={circuits} excursions={excursions} destinations={destinations} events={events} articles={articles} />
+            <WhatsAppButton />
+            <FreeQuoteButton />
+          </WishlistProvider>
         </NextIntlClientProvider>
       </body>
     </html>
   );
 }
+
+
+
+

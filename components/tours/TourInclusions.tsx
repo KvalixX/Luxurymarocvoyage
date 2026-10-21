@@ -5,29 +5,28 @@ interface TourInclusionsProps {
   options: string[];
   highlights: string[];
   locale: string;
+  view?: 'all' | 'included' | 'options';
 }
 
-export default function TourInclusions({
-  includes,
-  options,
-  highlights,
-  locale,
-}: TourInclusionsProps) {
+export default function TourInclusions({ includes, options, highlights, view = 'all' }: TourInclusionsProps) {
+  const visibleIncludes = view !== 'options' ? includes.filter((item) => item.trim().length > 0) : [];
+  const visibleOptions = view !== 'included' ? options.filter((option) => option.trim().length > 0) : [];
+  const visibleHighlights = view !== 'options' ? highlights.filter((highlight) => highlight.trim().length > 0) : [];
+
+  if (visibleIncludes.length === 0 && visibleOptions.length === 0 && visibleHighlights.length === 0) return null;
+
   return (
     <div className="flex flex-col gap-8">
-      {/* Highlights */}
-      {highlights && highlights.length > 0 && (
-        <div className="rounded-3xl bg-sand-50/80 border border-sand-200 p-6 sm:p-8">
-          <div className="flex items-center gap-2 mb-4">
-            <Sparkles className="w-5 h-5 text-sand-600" />
-            <h3 className="font-serif text-xl font-bold text-morocco-dark">
-              Points Forts du Circuit
-            </h3>
+      {visibleHighlights.length > 0 && (
+        <div className="rounded-3xl border border-sand-200 bg-sand-50/80 p-6 sm:p-8">
+          <div className="mb-4 flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-sand-600" />
+            <h3 className="font-serif text-xl font-bold text-morocco-dark">Points Forts du Circuit</h3>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {highlights.map((highlight, idx) => (
-              <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-sand-900">
-                <span className="w-2 h-2 rounded-full bg-sand-500 mt-1.5 shrink-0" />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {visibleHighlights.map((highlight, idx) => (
+              <div key={idx} className="flex items-start gap-2.5 text-xs text-sand-900 sm:text-sm">
+                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-sand-500" />
                 <span>{highlight}</span>
               </div>
             ))}
@@ -35,54 +34,43 @@ export default function TourInclusions({
         </div>
       )}
 
-      {/* Grid of Inclusions vs Options */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Included */}
-        <div className="rounded-3xl bg-white border border-sand-200 p-6 sm:p-8 shadow-sm">
-          <div className="flex items-center gap-2 mb-4 pb-3 border-b border-sand-100">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-            <h3 className="font-serif text-lg font-bold text-morocco-dark">
-              Ce qui est Inclus
-            </h3>
-          </div>
-          <ul className="flex flex-col gap-3">
-            {includes.map((item, idx) => (
-              <li key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-sand-900">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                <span>{item}</span>
-              </li>
-            ))}
-            {includes.length === 0 && (
-              <li className="text-xs text-sand-600 italic">
-                Véhicule privé climatisé, chauffeur-guide dédié, hébergements en riads et bivouac de luxe.
-              </li>
-            )}
-          </ul>
-        </div>
+      {(visibleIncludes.length > 0 || visibleOptions.length > 0) && (
+        <div className={`grid grid-cols-1 gap-6 ${visibleIncludes.length > 0 && visibleOptions.length > 0 ? 'md:grid-cols-2' : ''}`}>
+          {visibleIncludes.length > 0 && (
+            <div className="rounded-3xl border border-sand-200 bg-white p-6 shadow-sm sm:p-8">
+              <div className="mb-4 flex items-center gap-2 border-b border-sand-100 pb-3">
+                <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                <h3 className="font-serif text-lg font-bold text-morocco-dark">Ce qui est Inclus</h3>
+              </div>
+              <ul className="flex flex-col gap-3">
+                {visibleIncludes.map((item, idx) => (
+                  <li key={idx} className="flex items-start gap-2.5 text-xs text-sand-900 sm:text-sm">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
-        {/* Options / Extra services */}
-        <div className="rounded-3xl bg-white border border-sand-200 p-6 sm:p-8 shadow-sm">
-          <div className="flex items-center gap-2 mb-4 pb-3 border-b border-sand-100">
-            <PlusCircle className="w-5 h-5 text-terracotta-500" />
-            <h3 className="font-serif text-lg font-bold text-morocco-dark">
-              Options & Services Disponibles
-            </h3>
-          </div>
-          <ul className="flex flex-col gap-3">
-            {options.map((option, idx) => (
-              <li key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-sand-900">
-                <PlusCircle className="w-4 h-4 text-terracotta-400 shrink-0 mt-0.5" />
-                <span>{option}</span>
-              </li>
-            ))}
-            {options.length === 0 && (
-              <li className="text-xs text-sand-600 italic">
-                Survol en montgolfière à Marrakech, quad/buggy dans les dunes de Merzouga, pourboires et dépenses personnelles.
-              </li>
-            )}
-          </ul>
+          {visibleOptions.length > 0 && (
+            <div className="rounded-3xl border border-sand-200 bg-white p-6 shadow-sm sm:p-8">
+              <div className="mb-4 flex items-center gap-2 border-b border-sand-100 pb-3">
+                <PlusCircle className="h-5 w-5 text-terracotta-500" />
+                <h3 className="font-serif text-lg font-bold text-morocco-dark">Options &amp; Services Disponibles</h3>
+              </div>
+              <ul className="flex flex-col gap-3">
+                {visibleOptions.map((option, idx) => (
+                  <li key={idx} className="flex items-start gap-2.5 text-xs text-sand-900 sm:text-sm">
+                    <PlusCircle className="mt-0.5 h-4 w-4 shrink-0 text-terracotta-400" />
+                    <span>{option}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
-      </div>
+      )}
     </div>
   );
 }

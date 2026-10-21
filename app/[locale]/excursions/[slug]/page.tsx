@@ -4,10 +4,16 @@ import { getTourBySlug, getTourSlugs, getRelatedTours } from '@/lib/queries/tour
 import TourGallery from '@/components/tours/TourGallery';
 import BookingForm from '@/components/tours/BookingForm';
 import TourDetailTabs from '@/components/tours/TourDetailTabs';
+import TourRouteMap from '@/components/tours/TourRouteMap';
 import RelatedTours from '@/components/tours/RelatedTours';
 import { TouristTripJsonLd } from '@/components/seo/JsonLd';
 import { Star, Clock, Compass, MapPin } from 'lucide-react';
 import { Link } from '@/lib/i18n/navigation';
+import { localizedAlternates, localizedUrl } from '@/lib/seo/urls';
+import { seoDescription } from '@/lib/seo/text';
+
+// Excursion content and galleries must be read from the hosting database at request time.
+export const dynamic = 'force-dynamic';
 
 interface ExcursionDetailPageProps {
   params: Promise<{
@@ -17,7 +23,7 @@ interface ExcursionDetailPageProps {
 }
 
 export async function generateStaticParams() {
-  const slugs = await getTourSlugs();
+  const slugs = await getTourSlugs('excursion');
   const locales = ['fr', 'en', 'es'];
 
   const params: { locale: string; slug: string }[] = [];
@@ -39,25 +45,21 @@ export async function generateMetadata({
 
   if (!tour) return { title: 'Excursion Non Trouvée' };
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.luxurymarocvoyage.com';
-  const canonicalUrl = `${siteUrl}/${locale}/excursions/${slug}`;
+  const canonicalUrl = localizedUrl(locale, '/excursions/[slug]', { slug });
 
-  const cleanDescription =
-    tour.presentation ||
-    tour.description?.replace(/<[^>]*>?/gm, '').slice(0, 160) ||
-    `Excursion privée d'une journée au Maroc avec Luxurymarocvoyage.`;
+  const cleanDescription = seoDescription(
+    tour.presentation || tour.description,
+    locale === 'en'
+      ? `Private ${tour.days}-day Morocco excursion with Luxury Maroc Voyage.`
+      : locale === 'es'
+        ? `Excursión privada de ${tour.days} días por Marruecos con Luxury Maroc Voyage.`
+        : `Excursion privée de ${tour.days} jours au Maroc avec Luxury Maroc Voyage.`,
+  );
 
   return {
-    title: `${tour.title} | Excursion Privée Maroc`,
+    title: `${tour.title} | ${locale === 'en' ? 'Morocco Excursion' : locale === 'es' ? 'Excursi\u00f3n en Marruecos' : 'Excursion au Maroc'}`,
     description: cleanDescription,
-    alternates: {
-      canonical: canonicalUrl,
-      languages: {
-        fr: `${siteUrl}/fr/excursions/${slug}`,
-        en: `${siteUrl}/en/excursions/${slug}`,
-        es: `${siteUrl}/es/excursiones/${slug}`,
-      },
-    },
+    alternates: localizedAlternates(locale, '/excursions/[slug]', { slug }),
     openGraph: {
       title: tour.title,
       description: cleanDescription,
@@ -78,13 +80,16 @@ export default async function ExcursionDetailPage({
     notFound();
   }
 
+  const mapItinerary = tour.itinerary.length > 0
+    ? tour.itinerary
+    : [{ id: 0, day: 'Day 1', title: tour.route || tour.title, text: tour.description }];
   const relatedTours = await getRelatedTours(tour.slug, locale, tour.destinationId, 3);
 
   return (
     <div className="min-h-screen bg-white">
-      <TouristTripJsonLd tour={tour} locale={locale} />
+      <TouristTripJsonLd tour={tour} locale={locale} tripType="excursion" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
+      <div className="mx-auto max-w-7xl px-3 pb-12 pt-20 sm:px-6 sm:pb-16 sm:pt-24 lg:px-8">
 
         {/* ─────────────────────────────────────────────────────
             TOP ROW: Gallery (left) + Form (right) — both aligned
@@ -97,13 +102,14 @@ export default async function ExcursionDetailPage({
 
             {/* Gallery card */}
             <TourGallery
+              slug={tour.slug}
               coverImage={tour.image}
               gallery={tour.gallery}
               title={tour.title}
             />
 
             {/* Breadcrumbs */}
-            <nav className="flex items-center gap-2 text-sm text-slate-500">
+            <nav className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
               <Link href="/" className="hover:text-terracotta-600 transition-colors">
                 Home
               </Link>
@@ -184,24 +190,28 @@ export default async function ExcursionDetailPage({
             </div>
 
             {/* Tabs: Overview / Included-Highlights / Itinerary */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
               <TourDetailTabs
                 presentation={tour.presentation || ''}
                 description={tour.description || ''}
+                programme={tour.programme || ''}
                 includes={tour.includes}
                 options={tour.options}
                 highlights={tour.highlights}
                 itinerary={tour.itinerary}
                 locale={locale}
+                separateOptions
               />
             </div>
           </div>
 
-          {/* RIGHT — Sticky booking form */}
-          <div className="w-full lg:w-[340px] xl:w-[360px] shrink-0 lg:sticky lg:top-24">
-            <BookingForm tour={tour} locale={locale} />
+          {/* RIGHT — Booking form and sharing */}
+          <div className="w-full lg:w-[340px] xl:w-[360px] shrink-0 lg:sticky lg:top-24 lg:self-start">
+            <BookingForm tour={tour} locale={locale} tripType="excursion" />
           </div>
         </div>
+
+        <TourRouteMap itinerary={mapItinerary} locale={locale} departure={tour.departure} />
 
         {/* ── You may also like ───────────────────────────── */}
         {relatedTours.length > 0 && (

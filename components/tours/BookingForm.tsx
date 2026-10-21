@@ -2,14 +2,16 @@
 
 import { useState } from 'react';
 import { TourDetail } from '@/lib/queries/tours';
-import { CheckCircle, MessageCircle } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
+import InquiryConfirmationModal from '@/components/forms/InquiryConfirmationModal';
 
 interface BookingFormProps {
   tour: TourDetail;
   locale: string;
+  tripType: 'circuit' | 'excursion';
 }
 
-export default function BookingForm({ tour, locale }: BookingFormProps) {
+export default function BookingForm({ tour, locale, tripType }: BookingFormProps) {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -20,7 +22,7 @@ export default function BookingForm({ tour, locale }: BookingFormProps) {
 
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
-  const phoneNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '212600000000';
+  const phoneNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '212776715010';
   const cleanNumber = phoneNumber.replace(/[^0-9]/g, '');
   const whatsappMessage = encodeURIComponent(
     `Bonjour Luxurymarocvoyage, je souhaite un devis pour le circuit : "${tour.title}".`
@@ -39,11 +41,16 @@ export default function BookingForm({ tour, locale }: BookingFormProps) {
           tourTitle: tour.title,
           tourSlug: tour.slug,
           locale,
+          requestType: 'Quote request',
+          source: 'Circuit / excursion detail page',
+          tripType,
         }),
       });
-      if (res.ok || !res.ok) setStatus('success');
-    } catch {
+      if (!res.ok) throw new Error('Inquiry failed');
+      setFormData({ name: '', email: '', phone: '', travelers: '', notes: '' });
       setStatus('success');
+    } catch {
+      setStatus('error');
     }
   };
 
@@ -51,7 +58,7 @@ export default function BookingForm({ tour, locale }: BookingFormProps) {
     'w-full text-sm bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-terracotta-400/60 focus:border-terracotta-400 transition';
 
   return (
-    <aside className="sticky top-24 bg-white border border-slate-200 rounded-2xl shadow-lg overflow-hidden">
+    <aside className="bg-white border border-slate-200 rounded-2xl shadow-lg overflow-hidden">
       {/* Header */}
       <div className="px-6 pt-6 pb-4 border-b border-slate-100">
         <h2 className="text-xl font-bold text-terracotta-600 leading-snug">
@@ -60,28 +67,7 @@ export default function BookingForm({ tour, locale }: BookingFormProps) {
         <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">FREE</p>
       </div>
 
-      {status === 'success' ? (
-        <div className="p-8 text-center flex flex-col items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
-            <CheckCircle className="w-8 h-8" />
-          </div>
-          <div>
-            <p className="font-bold text-slate-800 mb-1">Demande envoyée !</p>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Votre conseiller vous contactera sous 24h avec un devis détaillé et personnalisé.
-            </p>
-          </div>
-          <a
-            href={`https://wa.me/${cleanNumber}?text=${whatsappMessage}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold flex items-center justify-center gap-2 transition-colors"
-          >
-            <MessageCircle className="w-4 h-4" />
-            Échanger sur WhatsApp
-          </a>
-        </div>
-      ) : (
+      {status === 'success' ? (<InquiryConfirmationModal locale={locale} onClose={() => setStatus('idle')} />) : (
         <form onSubmit={handleSubmit} className="px-6 py-5 flex flex-col gap-4">
           {/* Full Name */}
           <div>
@@ -91,6 +77,7 @@ export default function BookingForm({ tour, locale }: BookingFormProps) {
             <input
               type="text"
               required
+              maxLength={120}
               placeholder="Enter your first name..."
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -106,6 +93,7 @@ export default function BookingForm({ tour, locale }: BookingFormProps) {
             <input
               type="email"
               required
+              maxLength={254}
               placeholder="Enter your email (example@gmail.com)"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -121,6 +109,7 @@ export default function BookingForm({ tour, locale }: BookingFormProps) {
             <input
               type="tel"
               required
+              maxLength={40}
               placeholder="Enter your phone number..."
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -135,6 +124,7 @@ export default function BookingForm({ tour, locale }: BookingFormProps) {
             </label>
             <input
               type="text"
+              maxLength={50}
               placeholder="Enter the number of travellers..."
               value={formData.travelers}
               onChange={(e) => setFormData({ ...formData, travelers: e.target.value })}
@@ -149,6 +139,7 @@ export default function BookingForm({ tour, locale }: BookingFormProps) {
             </label>
             <textarea
               rows={4}
+              maxLength={4500}
               placeholder="Describe your ideal trip, dates, special requests..."
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
@@ -164,6 +155,8 @@ export default function BookingForm({ tour, locale }: BookingFormProps) {
           >
             {status === 'loading' ? 'Sending...' : 'Send my request'}
           </button>
+
+          {status === 'error' && <p role="alert" className="text-sm text-rose-600">We could not send your request. Please try again or contact us on WhatsApp.</p>}
 
           {/* WhatsApp alt */}
           <a

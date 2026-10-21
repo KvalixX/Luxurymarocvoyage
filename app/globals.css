@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
 @config "../tailwind.config.ts";
 
 :root {
@@ -29,6 +30,25 @@ body {
 }
 
 /* Custom Moroccan decorative patterns */
+.hero-zellige {
+  background-image: repeating-conic-gradient(from 45deg, transparent 0deg 42deg, rgba(201, 150, 60, 0.26) 43deg 45deg, transparent 46deg 90deg);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(ellipse at bottom left, #000 8%, transparent 72%);
+}
+
+.hero-scroll-wheel {
+  animation: hero-scroll-wheel 1.8s ease-in-out infinite;
+}
+
+@keyframes hero-scroll-wheel {
+  0%, 100% { opacity: 1; transform: translateY(0); }
+  65% { opacity: 0.25; transform: translateY(5px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-scroll-wheel { animation: none; }
+}
+
 .pattern-zellige {
   background-color: #1A0F0A;
   background-image: radial-gradient(rgba(201, 150, 60, 0.15) 1px, transparent 0);

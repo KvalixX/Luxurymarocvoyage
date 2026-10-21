@@ -3,8 +3,11 @@
 import Image from 'next/image';
 import { Link } from '@/lib/i18n/navigation';
 import type { Tour } from '@/lib/queries/tours';
-import { MapPin, Route, Star } from 'lucide-react';
+import { Heart, MapPin, Route, Star } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
+import TourQuoteModal from './TourQuoteModal';
+import { useWishlist } from '@/components/wishlist/WishlistProvider';
 
 interface TourCardProps {
   tour: Tour;
@@ -12,14 +15,16 @@ interface TourCardProps {
   isExcursion?: boolean;
   index?: number;
   compact?: boolean;
+  layout?: 'grid' | 'list';
 }
 
-export default function TourCard({ tour, isExcursion = false, index = 0, compact = false }: TourCardProps) {
+export default function TourCard({ tour, locale, isExcursion = false, index = 0, compact = false, layout = 'grid' }: TourCardProps) {
+  const [quoteOpen, setQuoteOpen] = useState(false);
+  const { has, toggle, ready } = useWishlist();
   const t = useTranslations('card');
   const tSections = useTranslations('sections');
 
   const href = isExcursion ? `/excursions/${tour.slug}` : `/circuits/${tour.slug}`;
-  const quoteHref = `/contact?${isExcursion ? 'excursion' : 'tour'}=${tour.slug}`;
   const defaultImage =
     'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=1200&q=80';
   const imageUrl = tour.image && tour.image.startsWith('http') ? tour.image : defaultImage;
@@ -30,10 +35,12 @@ export default function TourCard({ tour, isExcursion = false, index = 0, compact
   const rating = tour.rating > 0 ? tour.rating : 4.95;
   const reviews = tour.reviews > 0 ? tour.reviews : 276;
   const hasPromo = tour.promotion || index % 3 === 0;
+  const kind = isExcursion ? 'excursion' : 'circuit';
+  const saved = ready && has(kind, tour.id);
 
   return (
-    <article className={`group flex h-full flex-col overflow-hidden rounded-2xl border border-[#F0E6D8]/80 bg-white shadow-[0_2px_10px_rgba(26,15,10,0.04)] transition-all duration-300 hover:-translate-y-1 hover:border-terracotta-300/70 hover:shadow-[0_16px_32px_-8px_rgba(223,105,81,0.16)] ${compact ? 'w-[235px] shrink-0 snap-start sm:w-[255px] md:w-[275px]' : ''}`}>
-      <div className="relative aspect-[16/10.5] w-full overflow-hidden bg-slate-100">
+    <article className={`group flex ${layout === 'list' && !compact ? 'min-h-[190px] flex-row' : 'h-full flex-col'} overflow-hidden rounded-2xl border border-[#F0E6D8]/80 bg-white shadow-[0_2px_10px_rgba(26,15,10,0.04)] transition-all duration-300 hover:-translate-y-1 hover:border-terracotta-300/70 hover:shadow-[0_16px_32px_-8px_rgba(223,105,81,0.16)] ${compact ? 'w-[min(82vw,300px)] shrink-0 snap-start sm:w-[255px] md:w-[275px]' : ''}`}>
+      <div className={`relative overflow-hidden bg-slate-100 ${layout === 'list' && !compact ? 'min-h-[190px] w-[34%] shrink-0' : 'aspect-[16/10.5] w-full'}`}>
         <Image
           src={imageUrl}
           alt={tour.title || (isExcursion ? 'Excursion Maroc' : 'Circuit Maroc')}
@@ -42,6 +49,16 @@ export default function TourCard({ tour, isExcursion = false, index = 0, compact
           className="object-cover transition-transform duration-500 ease-out group-hover:scale-106"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        <button
+          type="button"
+          disabled={!ready}
+          onClick={() => toggle(tour, kind)}
+          aria-label={saved ? (locale === 'fr' ? 'Retirer des favoris' : locale === 'es' ? 'Quitar de favoritos' : 'Remove from wishlist') : (locale === 'fr' ? 'Ajouter aux favoris' : locale === 'es' ? 'Añadir a favoritos' : 'Add to wishlist')}
+          aria-pressed={saved}
+          className={`absolute right-3 top-3 z-20 flex h-10 w-10 items-center justify-center rounded-full shadow-md transition hover:scale-105 disabled:cursor-wait ${saved ? 'bg-[#B64F2E] text-white' : 'bg-white/95 text-[#181E4B] hover:bg-white'}`}
+        >
+          <Heart className={`h-5 w-5 ${saved ? 'fill-current' : ''}`} />
+        </button>
         {hasPromo && (
           <div className="absolute left-2.5 top-2.5 z-10">
             <span className="rounded-full border border-slate-200/50 bg-white/95 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-800 shadow-xs backdrop-blur-xs">
@@ -51,9 +68,9 @@ export default function TourCard({ tour, isExcursion = false, index = 0, compact
         )}
       </div>
 
-      <div className="flex flex-1 flex-col justify-between p-3.5 sm:p-4">
+      <div className={`flex flex-1 flex-col justify-between p-3.5 sm:p-4 ${layout === 'list' && !compact ? 'min-w-0 sm:flex-row sm:items-center sm:gap-6' : ''}`}>
         <div>
-          <h3 className="min-h-[38px] line-clamp-2 font-sans text-[13.5px] font-bold leading-snug text-[#181E4B] transition-colors group-hover:text-[#DF6951] sm:text-[14.5px]">
+          <h3 className={`${layout === 'list' && !compact ? '' : 'min-h-[38px]'} line-clamp-2 font-sans text-[13.5px] font-bold leading-snug text-[#181E4B] transition-colors group-hover:text-[#DF6951] sm:text-[14.5px]`}>
             <Link href={href as any}>{tour.title}</Link>
           </h3>
 
@@ -79,13 +96,14 @@ export default function TourCard({ tour, isExcursion = false, index = 0, compact
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-2 pt-1">
-          <Link
-            href={quoteHref as any}
+        <div className={`grid grid-cols-2 gap-2 pt-1 ${layout === 'list' && !compact ? 'shrink-0 sm:w-44' : ''}`}>
+          <button
+            type="button"
+            onClick={() => setQuoteOpen(true)}
             className="rounded-lg bg-gradient-to-r from-terracotta-500 to-terracotta-600 px-2.5 py-2 text-center text-[11px] font-semibold text-white shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:from-terracotta-600 hover:to-terracotta-700 hover:shadow"
           >
             {t('quote')}
-          </Link>
+          </button>
           <Link
             href={href as any}
             className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-center text-[11px] font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-terracotta-400 hover:bg-orange-50/20 hover:text-terracotta-600"
@@ -94,6 +112,9 @@ export default function TourCard({ tour, isExcursion = false, index = 0, compact
           </Link>
         </div>
       </div>
+      {quoteOpen && (
+        <TourQuoteModal tour={tour} locale={locale} isExcursion={isExcursion} onClose={() => setQuoteOpen(false)} />
+      )}
     </article>
   );
 }

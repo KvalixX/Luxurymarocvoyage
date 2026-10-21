@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { localizedAlternates } from '@/lib/seo/urls';
 import Image from 'next/image';
 import { getEvents } from '@/lib/queries/events';
 import { Link } from '@/lib/i18n/navigation';
@@ -26,19 +27,11 @@ export async function generateMetadata({
     es: 'Participe en salidas especiales durante los grandes festivales y eventos culturales de Marruecos: Fin de Año en el Sáhara, Festival de las Rosas y encuentros únicos.',
   };
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.luxurymarocvoyage.com';
 
   return {
     title: titles[locale] || titles.fr,
     description: descriptions[locale] || descriptions.fr,
-    alternates: {
-      canonical: `${siteUrl}/${locale}/events`,
-      languages: {
-        fr: `${siteUrl}/fr/evenements`,
-        en: `${siteUrl}/en/events`,
-        es: `${siteUrl}/es/eventos`,
-      },
-    },
+    alternates: localizedAlternates(locale, '/events'),
   };
 }
 

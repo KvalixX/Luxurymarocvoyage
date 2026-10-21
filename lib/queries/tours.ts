@@ -1,6 +1,6 @@
-import { query, t, parseGallery } from '@/lib/db';
+﻿import { query, t, parseGallery } from '@/lib/db';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface TourRaw {
   id: number;
@@ -84,7 +84,7 @@ export interface TourDetail extends Tour {
   highlights: string[];
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function mapTour(raw: TourRaw, locale: string): Tour {
   return {
@@ -107,7 +107,7 @@ function mapTour(raw: TourRaw, locale: string): Tour {
   };
 }
 
-// ─── Queries ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Queries â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Get all tours of a given category type (circuits or excursions).
@@ -205,7 +205,13 @@ export async function getTourBySlug(
   };
 }
 
-export async function getTourSlugs(): Promise<{ slug: string }[]> {
+export async function getTourSlugs(typeFilter?: 'circuit' | 'excursion'): Promise<{ slug: string }[]> {
+  if (typeFilter === 'circuit') {
+    return query<{ slug: string }>(`SELECT slug FROM tours WHERE LOWER(type) LIKE '%circuit%'`);
+  }
+  if (typeFilter === 'excursion') {
+    return query<{ slug: string }>(`SELECT slug FROM tours WHERE (LOWER(type) LIKE '%excursion%' OR LOWER(type) LIKE '%journée%' OR LOWER(type) LIKE '%day%')`);
+  }
   return query<{ slug: string }>(`SELECT slug FROM tours`);
 }
 
@@ -237,3 +243,7 @@ export async function getRelatedTours(
   const rows = await query<TourRaw>(sql, params);
   return rows.map((r) => mapTour(r, locale));
 }
+
+
+
+

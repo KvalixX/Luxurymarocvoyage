@@ -1,22 +1,41 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import { usePathname, useRouter } from '@/lib/i18n/navigation';
 import { Link } from '@/lib/i18n/navigation';
 import { useTranslations, useLocale } from 'next-intl';
+import Image from 'next/image';
+import type { Tour } from '@/lib/queries/tours';
+import type { Destination } from '@/lib/queries/destinations';
+import type { Event } from '@/lib/queries/events';
+import type { Article } from '@/lib/queries/articles';
 import {
   Menu,
   X,
   Globe,
   ChevronDown,
   ChevronRight,
+  Heart,
 } from 'lucide-react';
+import { useWishlist } from '@/components/wishlist/WishlistProvider';
 
-export default function Header() {
+interface HeaderProps {
+  circuits?: Tour[];
+  excursions?: Tour[];
+  destinations?: Destination[];
+  events?: Event[];
+  articles?: Article[];
+}
+
+export default function Header({ circuits = [], excursions = [], destinations = [], events = [], articles = [] }: HeaderProps) {
   const t = useTranslations('nav');
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
+  const routeParams = useParams<Record<string, string | string[]>>();
+  const { items: wishlistItems, ready: wishlistReady } = useWishlist();
+  const wishlistLabel = locale === 'fr' ? 'Favoris' : locale === 'es' ? 'Favoritos' : 'Wishlist';
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -34,7 +53,7 @@ export default function Header() {
   const switchLocale = (newLocale: 'fr' | 'en' | 'es') => {
     setLangMenuOpen(false);
     setMobileMenuOpen(false);
-    router.replace(pathname as any, { locale: newLocale });
+    router.replace({ pathname, params: routeParams } as any, { locale: newLocale });
   };
 
   const navLinks = [
@@ -47,30 +66,19 @@ export default function Header() {
     { href: '/contact' as any, key: 'contact', label: t('contact'), hasDropdown: false },
   ];
 
-  const dropdownLinks: Record<string, { href: string; label: string }[]> = locale === 'fr'
-    ? {
-        circuits: [{ href: '/circuits', label: 'Tous les circuits' }, { href: '/contact', label: 'Créer un voyage sur mesure' }],
-        excursions: [{ href: '/excursions', label: 'Toutes les excursions' }, { href: '/contact', label: 'Organiser une excursion privée' }],
-        destinations: [{ href: '/destinations', label: 'Toutes les destinations' }, { href: '/circuits', label: 'Circuits par destination' }],
-        events: [{ href: '/events', label: 'Tous les événements' }, { href: '/blog', label: 'Culture et traditions' }],
-        blog: [{ href: '/blog', label: 'Tous les articles' }, { href: '/about', label: 'À propos de nous' }],
-      }
+  const labels = locale === 'fr'
+    ? { allCircuits: 'Circuits privés au Maroc', allExcursions: 'Excursions au Maroc', allDestinations: 'Destinations du Maroc', allEvents: 'Événements au Maroc', allArticles: 'Guides de voyage au Maroc' }
     : locale === 'es'
-      ? {
-          circuits: [{ href: '/circuits', label: 'Todos los circuitos' }, { href: '/contact', label: 'Crear un viaje a medida' }],
-          excursions: [{ href: '/excursions', label: 'Todas las excursiones' }, { href: '/contact', label: 'Organizar una excursión privada' }],
-          destinations: [{ href: '/destinations', label: 'Todos los destinos' }, { href: '/circuits', label: 'Circuitos por destino' }],
-          events: [{ href: '/events', label: 'Todos los eventos' }, { href: '/blog', label: 'Cultura y tradiciones' }],
-          blog: [{ href: '/blog', label: 'Todos los artículos' }, { href: '/about', label: 'Sobre nosotros' }],
-        }
-      : {
-          circuits: [{ href: '/circuits', label: 'All circuits' }, { href: '/contact', label: 'Create a tailor-made trip' }],
-          excursions: [{ href: '/excursions', label: 'All excursions' }, { href: '/contact', label: 'Arrange a private day trip' }],
-          destinations: [{ href: '/destinations', label: 'All destinations' }, { href: '/circuits', label: 'Tours by destination' }],
-          events: [{ href: '/events', label: 'All events' }, { href: '/blog', label: 'Culture and traditions' }],
-          blog: [{ href: '/blog', label: 'All articles' }, { href: '/about', label: 'About our team' }],
-        };
+      ? { allCircuits: 'Circuitos privados por Marruecos', allExcursions: 'Excursiones en Marruecos', allDestinations: 'Destinos de Marruecos', allEvents: 'Eventos en Marruecos', allArticles: 'Guías de viaje de Marruecos' }
+      : { allCircuits: 'Private Morocco tours', allExcursions: 'Morocco day trips & excursions', allDestinations: 'Morocco travel destinations', allEvents: 'Cultural events in Morocco', allArticles: 'Morocco travel guides' };
 
+  const dropdownLinks: Record<string, { href: string; label: string }[]> = {
+    circuits: [{ href: '/circuits', label: labels.allCircuits }, ...circuits.slice(0, 4).map((tour) => ({ href: `/circuits/${tour.slug}`, label: tour.title }))],
+    excursions: [{ href: '/excursions', label: labels.allExcursions }, ...excursions.slice(0, 4).map((tour) => ({ href: `/excursions/${tour.slug}`, label: tour.title }))],
+    destinations: [{ href: '/destinations', label: labels.allDestinations }, ...destinations.slice(0, 5).map((destination) => ({ href: `/destinations/${destination.slug}`, label: locale === 'fr' ? `Voyage à ${destination.name}` : locale === 'es' ? `Viaje a ${destination.name}` : `${destination.name} travel guide` }))],
+    events: [{ href: '/events', label: labels.allEvents }, ...events.slice(0, 4).map((event) => ({ href: `/events/${event.slug}`, label: event.title }))],
+    blog: [{ href: '/blog', label: labels.allArticles }, ...articles.slice(0, 4).map((article) => ({ href: `/blog/${article.slug}`, label: article.title }))],
+  };
   const languages = [
     { code: 'en', label: 'English', flag: '🇬🇧' },
     { code: 'fr', label: 'Français', flag: '🇫🇷' },
@@ -83,67 +91,26 @@ export default function Header() {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled
-          ? 'bg-white/95 backdrop-blur-md shadow-sm py-1.5 border-b border-slate-100'
-          : 'bg-white/80 lg:bg-transparent py-1.5 sm:py-2'
+          ? 'bg-[#F7EBDD]/95 backdrop-blur-md shadow-sm py-1.5 border-b border-[#E9DDCD]'
+          : 'bg-[#F7EBDD]/95 backdrop-blur-md border-b border-[#E9DDCD]/70 py-1.5 sm:py-2'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
-          {/* Circular Luxury Badge Logo */}
+          {/* Official Luxury Maroc Voyage logo */}
           <Link
             href="/"
-            className="flex items-center gap-3 group focus:outline-none"
-            aria-label="Prestigia Maroc Voyages"
+            className="group flex items-center gap-3 focus:outline-none"
+            aria-label="Luxury Maroc Voyage"
           >
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#111111] flex items-center justify-center p-1 shadow-sm border border-amber-500/30 group-hover:scale-105 transition-transform duration-300">
-              <svg
-                viewBox="0 0 100 100"
-                className="w-full h-full"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                {/* Outer decorative ring */}
-                <circle cx="50" cy="50" r="46" stroke="#C9963C" strokeWidth="1.5" strokeDasharray="3 2" opacity="0.6" />
-                {/* Sun / Star */}
-                <circle cx="50" cy="28" r="4" fill="#E9C580" />
-                {/* Morocco Atlas Mountains Peaks */}
-                <path
-                  d="M24 58 L42 36 L56 50 L66 40 L76 58 Z"
-                  stroke="#E9C580"
-                  strokeWidth="2.5"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M34 58 L46 44 L54 52"
-                  stroke="#DF6951"
-                  strokeWidth="2"
-                  strokeLinejoin="round"
-                />
-                {/* Text inside badge */}
-                <text
-                  x="50"
-                  y="72"
-                  textAnchor="middle"
-                  fill="#E9C580"
-                  fontSize="7.5"
-                  fontWeight="bold"
-                  letterSpacing="1.5"
-                >
-                  PRESTIGIA
-                </text>
-                <text
-                  x="50"
-                  y="82"
-                  textAnchor="middle"
-                  fill="#DF6951"
-                  fontSize="6.5"
-                  fontWeight="bold"
-                  letterSpacing="1.2"
-                >
-                  MAROC
-                </text>
-              </svg>
-            </div>
+            <Image
+              src="/logos/logo2-Photoroom.png"
+              alt="Luxury Maroc Voyage"
+              width={743}
+              height={439}
+              priority
+              className="h-auto w-[68px] transition-transform duration-300 group-hover:scale-[1.03] sm:w-[78px]"
+            />
           </Link>
 
           {/* Desktop Navigation Links */}
@@ -185,6 +152,15 @@ export default function Header() {
 
           {/* Right Action: Language Switcher */}
           <div className="flex items-center gap-3">
+            <Link
+              href="/wishlist"
+              aria-label={`${wishlistLabel}${wishlistReady ? ` (${wishlistItems.length})` : ''}`}
+              className="relative flex h-9 items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold text-slate-700 transition hover:bg-white/70 hover:text-[#B64F2E] sm:px-3"
+            >
+              <Heart className="h-4 w-4" />
+              <span className="hidden xl:inline">{wishlistLabel}</span>
+              {wishlistReady && wishlistItems.length > 0 && <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[#B64F2E] px-1 text-[10px] font-bold text-white">{wishlistItems.length > 99 ? '99+' : wishlistItems.length}</span>}
+            </Link>
             <div className="relative">
               <button
                 onClick={() => setLangMenuOpen(!langMenuOpen)}
@@ -227,6 +203,7 @@ export default function Header() {
               </button>
             </div>
           </div>
+
         </div>
       </div>
 

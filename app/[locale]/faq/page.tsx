@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
+import { localizedAlternates } from '@/lib/seo/urls';
 import Breadcrumbs from '@/components/seo/Breadcrumbs';
 import FaqSection from '@/components/home/FaqSection';
+import { getTours } from '@/lib/queries/tours';
+import { getPopularDestinations } from '@/lib/queries/destinations';
 import { HelpCircle } from 'lucide-react';
 
 interface FaqPageProps {
@@ -24,24 +27,21 @@ export async function generateMetadata({
     es: 'Respuestas a todas las dudas sobre su viaje a Marruecos: clima, seguridad, qué llevar, acampada en el desierto y condiciones de reserva.',
   };
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.luxurymarocvoyage.com';
 
   return {
     title: titles[locale] || titles.fr,
     description: descriptions[locale] || descriptions.fr,
-    alternates: {
-      canonical: `${siteUrl}/${locale}/faq`,
-      languages: {
-        fr: `${siteUrl}/fr/faq`,
-        en: `${siteUrl}/en/faq`,
-        es: `${siteUrl}/es/faq`,
-      },
-    },
+    alternates: localizedAlternates(locale, '/faq'),
   };
 }
 
 export default async function FaqPage({ params }: FaqPageProps) {
   const { locale } = await params;
+  const [circuits, excursions, destinations] = await Promise.all([
+    getTours(locale, { typeFilter: 'circuit' }).catch(() => []),
+    getTours(locale, { typeFilter: 'excursion' }).catch(() => []),
+    getPopularDestinations(locale, 6).catch(() => []),
+  ]);
 
   const breadcrumbs = [
     { label: 'FAQ' },
@@ -52,7 +52,7 @@ export default async function FaqPage({ params }: FaqPageProps) {
       <Breadcrumbs items={breadcrumbs} locale={locale} />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-        <FaqSection locale={locale} />
+        <FaqSection locale={locale} circuits={circuits} excursions={excursions} destinations={destinations} />
       </div>
     </div>
   );

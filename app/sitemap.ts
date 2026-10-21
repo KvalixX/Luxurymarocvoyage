@@ -3,9 +3,9 @@ import { getTourSlugs } from '@/lib/queries/tours';
 import { getEventSlugs } from '@/lib/queries/events';
 import { getArticleSlugs } from '@/lib/queries/articles';
 import { getDestinationSlugs } from '@/lib/queries/destinations';
+import { localizedUrl } from '@/lib/seo/urls';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.luxurymarocvoyage.com';
   const locales = ['fr', 'en', 'es'];
 
   // Static routes
@@ -15,6 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/excursions',
     '/events',
     '/blog',
+    '/destinations',
     '/about',
     '/contact',
     '/faq',
@@ -26,15 +27,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const route of staticRoutes) {
     for (const locale of locales) {
       entries.push({
-        url: `${siteUrl}/${locale}${route}`,
-        lastModified: new Date(),
+        url: localizedUrl(locale, route || '/'),
         changeFrequency: route === '' ? 'daily' : 'weekly',
         priority: route === '' ? 1.0 : 0.8,
         alternates: {
           languages: {
-            fr: `${siteUrl}/fr${route}`,
-            en: `${siteUrl}/en${route}`,
-            es: `${siteUrl}/es${route}`,
+            fr: localizedUrl('fr', route || '/'),
+            en: localizedUrl('en', route || '/'),
+            es: localizedUrl('es', route || '/'),
+            'x-default': localizedUrl('fr', route || '/'),
           },
         },
       });
@@ -42,29 +43,32 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   // Dynamic tours (circuits and excursions)
-  const [tours, events, articles, destinations] = await Promise.all([
-    getTourSlugs().catch(() => []),
+  const [circuits, excursions, events, articles, destinations] = await Promise.all([
+    getTourSlugs('circuit').catch(() => []),
+    getTourSlugs('excursion').catch(() => []),
     getEventSlugs().catch(() => []),
     getArticleSlugs().catch(() => []),
     getDestinationSlugs().catch(() => []),
   ]);
 
-  for (const tour of tours) {
-    if (!tour.slug) continue;
-    for (const locale of locales) {
-      entries.push({
-        url: `${siteUrl}/${locale}/circuits/${tour.slug}`,
-        lastModified: new Date(),
-        changeFrequency: 'weekly',
-        priority: 0.9,
-        alternates: {
-          languages: {
-            fr: `${siteUrl}/fr/circuits/${tour.slug}`,
-            en: `${siteUrl}/en/circuits/${tour.slug}`,
-            es: `${siteUrl}/es/circuitos/${tour.slug}`,
+  for (const [trips, route] of [[circuits, '/circuits/[slug]'], [excursions, '/excursions/[slug]']] as const) {
+    for (const tour of trips) {
+      if (!tour.slug) continue;
+      for (const locale of locales) {
+        entries.push({
+          url: localizedUrl(locale, route, { slug: tour.slug }),
+          changeFrequency: 'weekly',
+          priority: 0.9,
+          alternates: {
+            languages: {
+              fr: localizedUrl('fr', route, { slug: tour.slug }),
+              en: localizedUrl('en', route, { slug: tour.slug }),
+              es: localizedUrl('es', route, { slug: tour.slug }),
+              'x-default': localizedUrl('fr', route, { slug: tour.slug }),
+            },
           },
-        },
-      });
+        });
+      }
     }
   }
 
@@ -72,10 +76,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (!event.slug) continue;
     for (const locale of locales) {
       entries.push({
-        url: `${siteUrl}/${locale}/events/${event.slug}`,
-        lastModified: new Date(),
+        url: localizedUrl(locale, '/events/[slug]', { slug: event.slug }),
         changeFrequency: 'weekly',
         priority: 0.8,
+        alternates: {
+          languages: {
+            fr: localizedUrl('fr', '/events/[slug]', { slug: event.slug }),
+            en: localizedUrl('en', '/events/[slug]', { slug: event.slug }),
+            es: localizedUrl('es', '/events/[slug]', { slug: event.slug }),
+            'x-default': localizedUrl('fr', '/events/[slug]', { slug: event.slug }),
+          },
+        },
       });
     }
   }
@@ -84,10 +95,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (!article.slug) continue;
     for (const locale of locales) {
       entries.push({
-        url: `${siteUrl}/${locale}/blog/${article.slug}`,
-        lastModified: new Date(),
+        url: localizedUrl(locale, '/blog/[slug]', { slug: article.slug }),
         changeFrequency: 'monthly',
         priority: 0.7,
+        alternates: {
+          languages: {
+            fr: localizedUrl('fr', '/blog/[slug]', { slug: article.slug }),
+            en: localizedUrl('en', '/blog/[slug]', { slug: article.slug }),
+            es: localizedUrl('es', '/blog/[slug]', { slug: article.slug }),
+            'x-default': localizedUrl('fr', '/blog/[slug]', { slug: article.slug }),
+          },
+        },
       });
     }
   }
@@ -96,10 +114,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (!dest.slug) continue;
     for (const locale of locales) {
       entries.push({
-        url: `${siteUrl}/${locale}/destinations/${dest.slug}`,
-        lastModified: new Date(),
+        url: localizedUrl(locale, '/destinations/[slug]', { slug: dest.slug }),
         changeFrequency: 'monthly',
         priority: 0.8,
+        alternates: {
+          languages: {
+            fr: localizedUrl('fr', '/destinations/[slug]', { slug: dest.slug }),
+            en: localizedUrl('en', '/destinations/[slug]', { slug: dest.slug }),
+            es: localizedUrl('es', '/destinations/[slug]', { slug: dest.slug }),
+            'x-default': localizedUrl('fr', '/destinations/[slug]', { slug: dest.slug }),
+          },
+        },
       });
     }
   }

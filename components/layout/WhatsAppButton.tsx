@@ -5,7 +5,7 @@ import { MessageCircle } from 'lucide-react';
 
 export default function WhatsAppButton() {
   const t = useTranslations('common');
-  const phoneNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '212600000000';
+  const phoneNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '212776715010';
   const cleanNumber = phoneNumber.replace(/[^0-9]/g, '');
   const defaultMessage = encodeURIComponent(
     'Bonjour Luxurymarocvoyage, je souhaite planifier un voyage privé au Maroc.'

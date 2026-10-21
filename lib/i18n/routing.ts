@@ -3,6 +3,7 @@ import { defineRouting } from 'next-intl/routing';
 export const routing = defineRouting({
   locales: ['fr', 'en', 'es'],
   defaultLocale: 'fr',
+  // Give every language a stable URL so search engines can index each version separately.
   localePrefix: 'always',
   pathnames: {
     '/': '/',
@@ -65,6 +66,11 @@ export const routing = defineRouting({
       fr: '/contact',
       en: '/contact',
       es: '/contacto',
+    },
+    '/wishlist': {
+      fr: '/favoris',
+      en: '/wishlist',
+      es: '/lista-de-deseos',
     },
     '/faq': {
       fr: '/faq',

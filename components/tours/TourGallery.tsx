@@ -1,32 +1,67 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { Images, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 interface TourGalleryProps {
+  slug: string;
   coverImage: string | null;
   gallery: string[];
   title: string;
 }
 
-export default function TourGallery({ coverImage, gallery, title }: TourGalleryProps) {
-  const allImages = [
-    coverImage,
-    ...gallery.filter((img) => img !== coverImage),
-  ].filter(Boolean) as string[];
+function uniqueImages(images: (string | null | undefined)[]): string[] {
+  return Array.from(new Set(
+    images
+      .filter((image): image is string => typeof image === 'string')
+      .map((image) => image.trim())
+      .filter(Boolean),
+  ));
+}
 
-  if (allImages.length === 0) {
-    allImages.push(
-      'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=1600&q=85'
-    );
-  }
-
+export default function TourGallery({ slug, coverImage, gallery, title }: TourGalleryProps) {
+  const [databaseImages, setDatabaseImages] = useState<string[] | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
 
-  const handleNext = () => setActiveIndex((p) => (p + 1) % allImages.length);
-  const handlePrev = () => setActiveIndex((p) => (p - 1 + allImages.length) % allImages.length);
+  // Re-read gallery data from the live hosting database, including when a page
+  // was previously generated while its gallery field was empty.
+  useEffect(() => {
+    let current = true;
+    setDatabaseImages(null);
+    fetch(`/api/tours/${encodeURIComponent(slug)}/gallery`, { cache: 'no-store' })
+      .then((response) => response.ok ? response.json() : null)
+      .then((data: unknown) => {
+        if (!current || !data || typeof data !== 'object' || !('images' in data)) return;
+        const images = (data as { images?: unknown }).images;
+        if (Array.isArray(images) && images.every((image) => typeof image === 'string') && images.length > 0) {
+          // Keep images supplied by the detail page too. The API may be served
+          // by a stale app process or a DB connection with only the cover;
+          // replacing the page gallery with that shorter response hides photos.
+          setDatabaseImages(uniqueImages(images));
+          setActiveIndex(0);
+        }
+      })
+      .catch(() => undefined);
+    return () => { current = false; };
+  }, [slug]);
+
+  const pageImages = [
+    coverImage,
+    ...gallery.filter((img) => img !== coverImage),
+  ];
+  // Merge the live API list with the server-rendered page list instead of
+  // allowing a cover-only response to erase the page's gallery images.
+  const allImages = uniqueImages([...(databaseImages ?? []), ...pageImages]);
+  const displayImages = allImages.length > 0 ? allImages : [
+    'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=1600&q=85',
+  ];
+
+  const safeActiveIndex = Math.min(activeIndex, displayImages.length - 1);
+
+  const handleNext = () => setActiveIndex((p) => (p + 1) % displayImages.length);
+  const handlePrev = () => setActiveIndex((p) => (p - 1 + displayImages.length) % displayImages.length);
   const openModal = (idx: number) => { setActiveIndex(idx); setModalOpen(true); };
 
   return (
@@ -35,25 +70,26 @@ export default function TourGallery({ coverImage, gallery, title }: TourGalleryP
       <div className="flex flex-col gap-3">
         <div
           className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden cursor-pointer bg-slate-200 group shadow-md border border-slate-200"
-          onClick={() => openModal(activeIndex)}
+          onClick={() => openModal(safeActiveIndex)}
         >
           <Image
-            src={allImages[activeIndex]}
-            alt={`${title} — photo ${activeIndex + 1}`}
+            src={displayImages[safeActiveIndex]}
+            alt={`${title} — photo ${safeActiveIndex + 1}`}
             fill
             priority
             sizes="(max-width: 1024px) 100vw, 60vw"
+            unoptimized
             className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
           />
 
           {/* Counter badge */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-black/55 backdrop-blur-sm text-white text-xs font-semibold select-none">
-            {activeIndex + 1}/{allImages.length}
+            {safeActiveIndex + 1}/{displayImages.length}
           </div>
 
           {/* Gallery button */}
           <button
-            onClick={(e) => { e.stopPropagation(); openModal(activeIndex); }}
+            onClick={(e) => { e.stopPropagation(); openModal(safeActiveIndex); }}
             className="absolute bottom-4 right-4 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/90 hover:bg-white text-slate-800 text-xs font-semibold shadow-sm transition-colors"
           >
             <Images className="w-3.5 h-3.5" />
@@ -80,14 +116,14 @@ export default function TourGallery({ coverImage, gallery, title }: TourGalleryP
         </div>
 
         {/* ── Thumbnail Strip ──────────────────────────────── */}
-        {allImages.length > 1 && (
+        {allImages.length > 0 && (
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
             {allImages.map((img, idx) => (
               <button
                 key={idx}
                 onClick={() => setActiveIndex(idx)}
                 className={`relative flex-shrink-0 w-[calc((100%-5*0.5rem)/6)] sm:w-20 aspect-[4/3] rounded-xl overflow-hidden border-2 transition-all ${
-                  idx === activeIndex
+                  idx === safeActiveIndex
                     ? 'border-terracotta-500 shadow-md opacity-100'
                     : 'border-slate-200 opacity-80 hover:opacity-100 hover:border-slate-400'
                 }`}
@@ -97,6 +133,7 @@ export default function TourGallery({ coverImage, gallery, title }: TourGalleryP
                   alt={`${title} miniature ${idx + 1}`}
                   fill
                   sizes="80px"
+                  unoptimized
                   className="object-cover"
                 />
               </button>
@@ -124,11 +161,12 @@ export default function TourGallery({ coverImage, gallery, title }: TourGalleryP
 
           <div className="relative w-full max-w-5xl h-[72vh]">
             <Image
-              src={allImages[activeIndex]}
-              alt={`${title} — photo ${activeIndex + 1}`}
+              src={displayImages[safeActiveIndex]}
+              alt={`${title} — photo ${safeActiveIndex + 1}`}
               fill
               className="object-contain"
               sizes="100vw"
+              unoptimized
             />
           </div>
 
@@ -140,21 +178,21 @@ export default function TourGallery({ coverImage, gallery, title }: TourGalleryP
           </button>
 
           <div className="mt-3 text-white/70 text-sm font-medium">
-            {activeIndex + 1} / {allImages.length}
+            {safeActiveIndex + 1} / {displayImages.length}
           </div>
 
           <div className="flex gap-2 mt-4 overflow-x-auto max-w-2xl">
-            {allImages.map((img, idx) => (
+            {displayImages.map((img, idx) => (
               <button
                 key={idx}
                 onClick={() => setActiveIndex(idx)}
                 className={`relative flex-shrink-0 w-16 h-11 rounded overflow-hidden border-2 transition-all ${
-                  idx === activeIndex
+                  idx === safeActiveIndex
                     ? 'border-terracotta-500'
                     : 'border-transparent opacity-60 hover:opacity-100'
                 }`}
               >
-                <Image src={img} alt="" fill sizes="64px" className="object-cover" />
+                <Image src={img} alt="" fill sizes="64px" className="object-cover" unoptimized />
               </button>
             ))}
           </div>

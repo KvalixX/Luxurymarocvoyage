@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
+import { localizedAlternates } from '@/lib/seo/urls';
 import { getTours } from '@/lib/queries/tours';
 import { getDestinations } from '@/lib/queries/destinations';
-import TourCard from '@/components/tours/TourCard';
+import TourResults from '@/components/tours/TourResults';
 import CircuitSidebarFilters from '@/components/tours/CircuitSidebarFilters';
 import Breadcrumbs from '@/components/seo/Breadcrumbs';
-import { Sparkles, LayoutGrid, Route, CarFront, Compass } from 'lucide-react';
+import { Sparkles, Route, CarFront, Compass } from 'lucide-react';
 
-const PAGE_SIZE = 9;
+const PAGE_SIZE = 12;
 
 interface CircuitsPageProps {
   params: Promise<{ locale: string }>;
@@ -39,19 +40,11 @@ export async function generateMetadata({
     es: 'Descubra nuestros circuitos privados exclusivos por Marruecos. Itinerarios a medida de 3 a 15 días, campamentos de lujo en el Sáhara y chófer VIP.',
   };
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.luxurymarocvoyage.com';
 
   return {
     title: titles[locale] || titles.fr,
     description: descriptions[locale] || descriptions.fr,
-    alternates: {
-      canonical: `${siteUrl}/${locale}/circuits`,
-      languages: {
-        fr: `${siteUrl}/fr/circuits`,
-        en: `${siteUrl}/en/circuits`,
-        es: `${siteUrl}/es/circuitos`,
-      },
-    },
+    alternates: localizedAlternates(locale, '/circuits'),
   };
 }
 
@@ -62,7 +55,7 @@ export default async function CircuitsPage({
   const { locale } = await params;
   const sp = await searchParams;
 
-  const destinationId = sp.destination ? parseInt(sp.destination) : undefined;
+  const destinationId = sp.destination ? Number(sp.destination) : undefined;
   const currentPage = sp.page ? Math.max(1, parseInt(sp.page)) : 1;
 
   const [allTours, destinations] = await Promise.all([
@@ -79,13 +72,13 @@ export default async function CircuitsPage({
 
   // Duration (exact days)
   if (sp.duration) {
-    const days = parseInt(sp.duration);
+    const days = Number(sp.duration);
     filteredTours = filteredTours.filter((t) => t.days === days);
   }
 
   // Nights (exact)
   if (sp.nights) {
-    const nights = parseInt(sp.nights);
+    const nights = Number(sp.nights);
     filteredTours = filteredTours.filter((t) => t.nights === nights);
   }
 
@@ -164,12 +157,15 @@ export default async function CircuitsPage({
           {/* LEFT SIDEBAR */}
           <CircuitSidebarFilters
             destinations={destinations.map((d) => ({ id: d.id, name: d.name }))}
+            locale={locale}
             currentDestination={sp.destination}
             currentDuration={sp.duration}
             currentNights={sp.nights}
             currentType={sp.type}
             currentSearch={sp.q}
             totalCount={totalCount}
+            durationOptions={allTours.map((tour) => tour.days)}
+            nightOptions={allTours.map((tour) => tour.nights)}
           />
 
           {/* RIGHT CONTENT */}
@@ -185,33 +181,12 @@ export default async function CircuitsPage({
                   </span>
                 )}
               </p>
-              {/* View toggle (decorative, grid is default) */}
-              <div className="flex items-center gap-1">
-                <button
-                  className="p-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-terracotta-50 hover:text-terracotta-600 transition-colors"
-                  title="Vue grille"
-                >
-                  <LayoutGrid className="w-4 h-4" />
-                </button>
-                <button
-                  className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"
-                  title="Vue liste"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 16 16">
-                    <path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                  </svg>
-                </button>
-              </div>
             </div>
 
             {/* ── Tour Grid ───────────────────────────────────── */}
             {paginatedTours.length > 0 ? (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-                  {paginatedTours.map((tour, index) => (
-                    <TourCard key={tour.id} tour={tour} locale={locale} index={index} />
-                  ))}
-                </div>
+                <TourResults tours={paginatedTours} locale={locale} />
 
                 {/* ── Pagination ──────────────────────────────── */}
                 {totalPages > 1 && (

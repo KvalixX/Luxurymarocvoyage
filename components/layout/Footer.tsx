@@ -1,243 +1,112 @@
-import { getTranslations } from 'next-intl/server';
 import { Link } from '@/lib/i18n/navigation';
-import {
-  Compass,
-  MapPin,
-  Phone,
-  Mail,
-  ShieldCheck,
-  Award,
-  Clock,
-  Sparkles,
-} from 'lucide-react';
+import Image from 'next/image';
+import { Compass, Mail, MapPin } from 'lucide-react';
+import type { Tour } from '@/lib/queries/tours';
+import type { Destination } from '@/lib/queries/destinations';
+import type { Event } from '@/lib/queries/events';
+import type { Article } from '@/lib/queries/articles';
 
 interface FooterProps {
   locale: string;
+  circuits: Tour[];
+  excursions: Tour[];
+  destinations: Destination[];
+  events: Event[];
+  articles: Article[];
 }
 
-export default async function Footer({ locale }: FooterProps) {
-  const t = await getTranslations({ locale, namespace: 'footer' });
-  const tNav = await getTranslations({ locale, namespace: 'nav' });
+export default function Footer({ locale, circuits, excursions, destinations, events, articles }: FooterProps) {
+  const fr = locale === 'fr';
+  const es = locale === 'es';
+  const text = fr
+    ? {
+        tagline: 'Circuits privés au Maroc, excursions depuis Marrakech et voyages sur mesure vers le Sahara, les villes impériales et les côtes atlantiques.',
+        company: 'Luxurymarocvoyage', tours: 'Circuits privés au Maroc', excursions: 'Excursions au Maroc',
+        destinations: 'Destinations marocaines', explore: 'Événements et guides de voyage',
+        allTours: 'Voir tous les circuits privés', allExcursions: 'Voir toutes les excursions',
+        allDestinations: 'Explorer toutes les destinations', allEvents: 'Événements au Maroc',
+        allArticles: 'Conseils pour voyager au Maroc', ideas: 'Explorer le Maroc : idées de voyage',
+        contact: 'Contact', about: 'À propos', rights: 'Tous droits réservés', home: 'Accueil', legal: 'Liens utiles',
+        sahara: 'Circuit privé dans le désert du Sahara', dayTrips: 'Excursions à la journée depuis Marrakech',
+      }
+    : es
+      ? {
+          tagline: 'Circuitos privados por Marruecos, excursiones desde Marrakech y viajes a medida al Sáhara, las ciudades imperiales y la costa atlántica.',
+          company: 'Luxurymarocvoyage', tours: 'Circuitos privados por Marruecos', excursions: 'Excursiones en Marruecos',
+          destinations: 'Destinos de Marruecos', explore: 'Eventos y guías de viaje',
+          allTours: 'Ver todos los circuitos privados', allExcursions: 'Ver todas las excursiones',
+          allDestinations: 'Explorar todos los destinos', allEvents: 'Eventos en Marruecos',
+          allArticles: 'Consejos para viajar a Marruecos', ideas: 'Explora Marruecos: ideas de viaje',
+          contact: 'Contacto', about: 'Sobre nosotros', rights: 'Todos los derechos reservados', home: 'Inicio', legal: 'Enlaces útiles',
+          sahara: 'Circuito privado por el desierto del Sáhara', dayTrips: 'Excursiones de un día desde Marrakech',
+        }
+      : {
+          tagline: 'Private Morocco tours, day trips from Marrakech, and tailor-made journeys to the Sahara, imperial cities, and Atlantic coast.',
+          company: 'Luxurymarocvoyage', tours: 'Private Morocco tours', excursions: 'Morocco day trips & excursions',
+          destinations: 'Places to visit in Morocco', explore: 'Morocco events & travel guides',
+          allTours: 'Browse all private Morocco tours', allExcursions: 'Browse all Morocco excursions',
+          allDestinations: 'Explore all Morocco destinations', allEvents: 'Cultural events in Morocco',
+          allArticles: 'Morocco travel tips and guides', ideas: 'Explore Morocco: trip ideas',
+          contact: 'Contact', about: 'About us', rights: 'All rights reserved', home: 'Home', legal: 'Helpful links',
+          sahara: 'Private Sahara Desert tours', dayTrips: 'Day trips from Marrakech',
+        };
 
-  const currentYear = new Date().getFullYear();
+  const columns = [
+    { title: text.company, links: [{ label: text.home, href: '/' }, { label: text.about, href: '/about' }, { label: text.contact, href: '/contact' }] },
+    { title: text.tours, links: [{ label: text.allTours, href: '/circuits' }, ...circuits.slice(0, 4).map((tour) => ({ label: tour.title, href: `/circuits/${tour.slug}` }))] },
+    { title: text.excursions, links: [{ label: text.allExcursions, href: '/excursions' }, ...excursions.slice(0, 3).map((tour) => ({ label: tour.title, href: `/excursions/${tour.slug}` }))] },
+    { title: text.destinations, links: [{ label: text.allDestinations, href: '/destinations' }, ...destinations.slice(0, 5).map((destination) => ({ label: destination.name, href: `/destinations/${destination.slug}` }))] },
+    { title: text.explore, links: [{ label: text.allEvents, href: '/events' }, ...events.slice(0, 2).map((event) => ({ label: event.title, href: `/events/${event.slug}` })), { label: text.allArticles, href: '/blog' }, ...articles.slice(0, 2).map((article) => ({ label: article.title, href: `/blog/${article.slug}` }))] },
+  ];
+  const ideaLinks = [
+    { label: text.sahara, href: '/circuits' },
+    { label: text.dayTrips, href: '/excursions' },
+    ...destinations.slice(0, 3).map((destination) => ({
+      label: fr ? `Voyage à ${destination.name}` : es ? `Viaje a ${destination.name}` : `Travel guide to ${destination.name}`,
+      href: `/destinations/${destination.slug}`,
+    })),
+  ];
 
   return (
-    <footer className="bg-morocco-dark text-sand-100 pt-16 pb-10 border-t border-sand-800/40 relative overflow-hidden">
-      {/* Top ambient luxury hairline transition */}
-      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#DF6951]/60 to-transparent" />
-
-      {/* Decorative background star glow */}
-      <div className="absolute top-0 right-1/4 w-96 h-96 bg-sand-500/5 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-10 w-80 h-80 bg-terracotta-500/5 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-14 border-b border-white/10">
-          {/* Col 1: Brand & Bio */}
-          <div className="lg:col-span-2 flex flex-col gap-5">
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-10 h-10 rounded-full bg-sand-500 text-morocco-dark flex items-center justify-center transition-transform duration-300 group-hover:rotate-12 shadow-md">
-                <Compass className="w-6 h-6 stroke-[1.75]" />
-              </div>
-              <span className="font-serif text-2xl font-bold tracking-tight text-white">
-                Luxury<span className="text-terracotta-400">Maroc</span>Voyage
-              </span>
+    <footer className="bg-[#181E4B] text-white">
+      <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-12 lg:px-10">
+        <div className="grid grid-cols-2 gap-x-7 gap-y-9 sm:grid-cols-3 lg:grid-cols-[1.25fr_repeat(5,minmax(0,1fr))] lg:gap-x-7">
+          <div className="col-span-2 max-w-sm sm:col-span-1">
+            <Link href="/" aria-label="Luxury Maroc Voyage home" className="mb-6 inline-flex">
+              <Image src="/logos/logo2-Photoroom.png" alt="Luxury Maroc Voyage" width={743} height={439} className="h-auto w-[78px]" />
             </Link>
-
-            <p className="text-sand-300 text-sm leading-relaxed max-w-sm">
-              {t('tagline')}
-            </p>
-
-            <div className="grid grid-cols-2 gap-3 pt-2 text-xs text-sand-200">
-              <div className="flex items-center gap-2 bg-white/5 p-2 rounded-lg border border-white/5">
-                <Award className="w-4 h-4 text-sand-400 shrink-0" />
-                <span>Guides Officiels Agréés</span>
-              </div>
-              <div className="flex items-center gap-2 bg-white/5 p-2 rounded-lg border border-white/5">
-                <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>Véhicules Mercedes VIP</span>
-              </div>
-              <div className="flex items-center gap-2 bg-white/5 p-2 rounded-lg border border-white/5">
-                <Clock className="w-4 h-4 text-sand-400 shrink-0" />
-                <span>Assistance Concierge 24/7</span>
-              </div>
-              <div className="flex items-center gap-2 bg-white/5 p-2 rounded-lg border border-white/5">
-                <Sparkles className="w-4 h-4 text-terracotta-400 shrink-0" />
-                <span>100% Itinéraires Sur-Mesure</span>
-              </div>
+            <p className="text-sm leading-relaxed text-[#D7D9E7]">{text.tagline}</p>
+            <div className="mt-5 flex gap-2.5">
+              <a href="mailto:contact@luxurymarocvoyage.com" aria-label="Email Luxury Maroc Voyage" className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20"><Mail className="h-4 w-4" /></a>
+              <Link href="/blog" aria-label={text.allArticles} className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20"><Compass className="h-4 w-4" /></Link>
+              <Link href="/destinations" aria-label={text.allDestinations} className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20"><MapPin className="h-4 w-4" /></Link>
             </div>
           </div>
 
-          {/* Col 2: Circuits & Excursions */}
-          <div className="flex flex-col gap-4">
-            <h4 className="font-serif text-lg font-semibold text-white tracking-wide">
-              {t('ourCircuits')}
-            </h4>
-            <ul className="flex flex-col gap-2.5 text-xs text-sand-300">
-              <li>
-                <Link
-                  href="/circuits"
-                  className="hover:text-terracotta-400 transition-colors"
-                >
-                  Grand Tour du Maroc
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/circuits"
-                  className="hover:text-terracotta-400 transition-colors"
-                >
-                  Circuit Désert Merzouga & Erg Chebbi
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/circuits"
-                  className="hover:text-terracotta-400 transition-colors"
-                >
-                  Villes Impériales & Médinas
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/circuits"
-                  className="hover:text-terracotta-400 transition-colors"
-                >
-                  Vallée du Dadès & Gorges du Todra
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/circuits"
-                  className="hover:text-terracotta-400 transition-colors"
-                >
-                  Oasis du Sud & Kasbahs
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/circuits"
-                  className="text-terracotta-400 font-medium hover:underline pt-1 inline-block"
-                >
-                  Tous les circuits privés →
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Col 3: Excursions & Destinations */}
-          <div className="flex flex-col gap-4">
-            <h4 className="font-serif text-lg font-semibold text-white tracking-wide">
-              {t('ourExcursions')}
-            </h4>
-            <ul className="flex flex-col gap-2.5 text-xs text-sand-300">
-              <li>
-                <Link
-                  href="/excursions"
-                  className="hover:text-terracotta-400 transition-colors"
-                >
-                  Excursion Vallée de l&apos;Ourika
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/excursions"
-                  className="hover:text-terracotta-400 transition-colors"
-                >
-                  Cascades d&apos;Ouzoud
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/excursions"
-                  className="hover:text-terracotta-400 transition-colors"
-                >
-                  Essaouira & Côte Atlantique
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/excursions"
-                  className="hover:text-terracotta-400 transition-colors"
-                >
-                  Désert d&apos;Agafay au Coucher du Soleil
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/excursions"
-                  className="hover:text-terracotta-400 transition-colors"
-                >
-                  Kasbah Aït Ben Haddou
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/excursions"
-                  className="text-terracotta-400 font-medium hover:underline pt-1 inline-block"
-                >
-                  Toutes les excursions →
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Col 4: Contact & Marrakech Agency */}
-          <div className="flex flex-col gap-4">
-            <h4 className="font-serif text-lg font-semibold text-white tracking-wide">
-              {t('contactInfo')}
-            </h4>
-            <ul className="flex flex-col gap-3 text-xs text-sand-300">
-              <li className="flex items-start gap-2.5">
-                <MapPin className="w-4 h-4 text-terracotta-400 shrink-0 mt-0.5" />
-                <span>{t('address')}</span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Phone className="w-4 h-4 text-sand-400 shrink-0" />
-                <a
-                  href="tel:+212600000000"
-                  className="hover:text-white transition-colors"
-                >
-                  {t('phone')}
-                </a>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Mail className="w-4 h-4 text-sand-400 shrink-0" />
-                <a
-                  href="mailto:contact@luxurymarocvoyage.com"
-                  className="hover:text-white transition-colors"
-                >
-                  {t('email')}
-                </a>
-              </li>
-            </ul>
-
-            <div className="mt-3">
-              <Link
-                href="/contact"
-                className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider text-morocco-dark bg-gradient-to-r from-sand-300 via-sand-400 to-sand-300 hover:from-sand-400 hover:to-sand-500 shadow-sm transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 text-center w-full"
-              >
-                {tNav('customTrip')}
-              </Link>
-            </div>
-          </div>
+          {columns.map((column) => (
+            <nav key={column.title} aria-label={column.title} className="min-w-0">
+              <h2 className="mb-4 font-serif text-base font-bold text-white">{column.title}</h2>
+              <ul className="space-y-3">
+                {column.links.map((item) => <li key={`${item.label}-${item.href}`}><Link href={item.href as any} className="text-sm leading-snug text-[#D7D9E7] transition-colors hover:text-white">{item.label}</Link></li>)}
+              </ul>
+            </nav>
+          ))}
         </div>
 
-        {/* Bottom copyright & legal */}
-        <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-sand-400">
-          <p>
-            © {currentYear} Luxurymarocvoyage. {t('rights')}
-          </p>
-          <div className="flex items-center gap-6">
-            <Link href="/about" className="hover:text-sand-200 transition-colors">
-              {tNav('about')}
-            </Link>
-            <Link href="/contact" className="hover:text-sand-200 transition-colors">
-              {tNav('contact')}
-            </Link>
-            <Link href="/faq" className="hover:text-sand-200 transition-colors">
-              FAQ
-            </Link>
+        <section className="mt-10 border-t border-white/10 pt-7">
+          <h2 className="mb-4 font-serif text-lg font-bold">{text.ideas}</h2>
+          <div className="flex flex-wrap gap-2">
+            {ideaLinks.map((item) => <Link key={`${item.label}-${item.href}`} href={item.href as any} className="rounded-md border border-white/15 bg-white/[0.045] px-3 py-2 text-xs font-semibold text-[#D7D9E7] transition hover:border-white/30 hover:bg-white/10 hover:text-white">{item.label}</Link>)}
           </div>
+        </section>
+
+        <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-5 text-xs text-[#AEB3CA] sm:flex-row">
+          <p className="text-center sm:text-left">© {new Date().getFullYear()} LuxuryMarocVoyage. {text.rights}</p>
+          <nav aria-label={text.legal} className="flex gap-5">
+            <Link href="/about" className="transition hover:text-white">{text.about}</Link>
+            <Link href="/contact" className="transition hover:text-white">{text.contact}</Link>
+            <Link href="/faq" className="transition hover:text-white">FAQ</Link>
+          </nav>
         </div>
       </div>
     </footer>

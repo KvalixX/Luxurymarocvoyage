@@ -40,14 +40,27 @@ export function t(
 /**
  * Helper: parse a JSON gallery field into an array of URLs
  */
-export function parseGallery(jsonField: string | null | undefined): string[] {
-  if (!jsonField) return [];
-  try {
-    const parsed = JSON.parse(jsonField);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
+export function parseGallery(jsonField: unknown): string[] {
+  if (jsonField == null) return [];
+
+  let parsed: unknown = jsonField;
+  if (Buffer.isBuffer(parsed)) parsed = parsed.toString('utf8');
+
+  // mysql2 can return native JSON as an array or LONGTEXT as a string.
+  // Some imported rows are encoded twice, so accept either representation.
+  for (let attempt = 0; attempt < 2 && typeof parsed === 'string'; attempt += 1) {
+    try {
+      parsed = JSON.parse(parsed);
+    } catch {
+      return [];
+    }
   }
+
+  if (!Array.isArray(parsed)) return [];
+  return parsed
+    .filter((image): image is string => typeof image === 'string')
+    .map((image) => image.trim())
+    .filter(Boolean);
 }
 
 /**

@@ -1,178 +1,83 @@
 'use client';
 
-import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { ChevronDown, HelpCircle } from 'lucide-react';
+import type { Tour } from '@/lib/queries/tours';
+import type { Destination } from '@/lib/queries/destinations';
 
 interface FaqItem {
   question: string;
   answer: string;
 }
 
-const faqsFr: FaqItem[] = [
-  {
-    question: 'Quelle est la meilleure période pour voyager au Maroc ?',
-    answer:
-      'Le printemps (mars à mai) et l’automne (septembre à novembre) sont idéaux avec des températures très douces tant dans les villes impériales que dans le désert. Pour le Sahara (Merzouga), les nuits sont fraîches et les journées parfaites entre octobre et avril.',
-  },
-  {
-    question: 'Comment se déroule une nuit en bivouac dans le désert du Sahara ?',
-    answer:
-      'Après une traversée mémorable en 4x4 ou à dos de dromadaire au coucher du soleil, vous rejoignez un campement nomade de luxe tout confort : tentes privées avec véritables lits king-size, salle de bain attenante avec douche chaude, dîner gastronomique marocain sous la voûte étoilée et chants berbères autour du feu.',
-  },
-  {
-    question: 'Vos circuits sont-ils 100% privatifs ?',
-    answer:
-      'Oui, absolument. Tous nos circuits et excursions sont exclusifs : vous disposez de votre véhicule privé haut de gamme (Mercedes Vito, Classe V ou 4x4 Prado) et de votre chauffeur-guide dédié. Vous voyagez à votre propre rythme sans contraintes de groupe.',
-  },
-  {
-    question: 'Vos chauffeurs et guides parlent-ils ma langue ?',
-    answer:
-      'Tous nos chauffeurs et guides officiels locaux maîtrisent parfaitement le français, l’anglais et l’espagnol. Lors de la réservation, nous affectons le guide correspondant à votre langue de prédilection.',
-  },
-  {
-    question: 'Quelles sont les modalités de réservation et d’acompte ?',
-    answer:
-      'Pour confirmer votre voyage sur-mesure, un acompte de 20% à 30% est demandé par virement bancaire sécurisé ou carte de crédit. Le solde peut être réglé avant le départ ou directement à votre arrivée à Marrakech.',
-  },
-];
-
-const faqsEn: FaqItem[] = [
-  {
-    question: 'What is the best time of year to visit Morocco?',
-    answer:
-      'Spring (March to May) and Autumn (September to November) offer the most pleasant weather across both imperial cities and desert regions. For the Sahara desert (Merzouga & Erg Chebbi), October through April offers ideal sunny days and crisp starlit evenings.',
-  },
-  {
-    question: 'What is a luxury desert camp experience like in Merzouga?',
-    answer:
-      'Arriving by camel trek or private 4x4 at sunset, you will stay in starlit royal glamping tents equipped with plush king beds, en-suite bathrooms with hot showers, authentic multi-course Moroccan dining, and traditional Berber music around a crackling campfire.',
-  },
-  {
-    question: 'Are all your tours 100% private?',
-    answer:
-      'Yes, all our itineraries are strictly private. You will have your own dedicated luxury Mercedes vehicle and an experienced chauffeur-guide, traveling at your own leisurely pace without the constraints of large tour buses.',
-  },
-  {
-    question: 'What languages do your guides speak?',
-    answer:
-      'Our certified local guides and private drivers are fluent in English, French, and Spanish. We assign the driver and city guides matching your preferred language.',
-  },
-  {
-    question: 'How do bookings and payment terms work?',
-    answer:
-      'To secure your private journey, a 20% to 30% deposit is payable via secure bank transfer or credit card. The remaining balance can be completed prior to arrival or in Marrakech upon departure.',
-  },
-];
-
-const faqsEs: FaqItem[] = [
-  {
-    question: '¿Cuál es la mejor época para viajar a Marruecos?',
-    answer:
-      'La primavera (marzo a mayo) y el otoño (septiembre a noviembre) son las estaciones más agradables tanto en las ciudades imperiales como en el desierto. Para el Sáhara (Merzouga), de octubre a abril el clima es idóneo.',
-  },
-  {
-    question: '¿Cómo es la estancia en un campamento de lujo en el desierto?',
-    answer:
-      'Tras un paseo en dromedario o 4x4 al atardecer, descansará en jaimas de lujo con camas de matrimonio de gran confort, baño privado con agua caliente, cena tradicional marroquí y música bereber junto a la hoguera bajo el cielo estrellado.',
-  },
-  {
-    question: '¿Todos sus circuitos son 100% privados?',
-    answer:
-      'Sí, todos nuestros viajes son exclusivamente privados. Contará con su propio vehículo Mercedes climatizado y chófer-guía profesional, disfrutando del viaje a su propio ritmo sin prisas ni grupos ajenos.',
-  },
-  {
-    question: '¿En qué idiomas atienden sus guías y conductores?',
-    answer:
-      'Nuestros conductores y guías locales dominan con fluidez español, inglés y francés. Asignamos siempre el equipo que hable su idioma.',
-  },
-  {
-    question: '¿Cómo se formaliza la reserva y el pago?',
-    answer:
-      'Para confirmar su itinerario personalizado, se abona un anticipo del 20% al 30% mediante transferencia bancaria segura o tarjeta. El resto se abona antes de la llegada o directamente en Marrakech.',
-  },
-];
-
 interface FaqSectionProps {
   locale: string;
+  circuits?: Tour[];
+  excursions?: Tour[];
+  destinations?: Destination[];
 }
 
-export default function FaqSection({ locale }: FaqSectionProps) {
+export default function FaqSection({ locale, circuits = [], excursions = [], destinations = [] }: FaqSectionProps) {
   const t = useTranslations('sections');
+  const fr = locale === 'fr';
+  const es = locale === 'es';
+  const destinationNames = destinations.slice(0, 5).map((destination) => destination.name);
+  const circuitNames = circuits.slice(0, 3).map((tour) => tour.title);
+  const excursionNames = excursions.slice(0, 3).map((tour) => tour.title);
+  const list = (items: string[], fallback: string) => items.length ? items.join(', ') : fallback;
 
-  const faqs = locale === 'es' ? faqsEs : locale === 'en' ? faqsEn : faqsFr;
-  const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const faqs: FaqItem[] = fr
+    ? [
+        { question: 'Quels circuits privés et voyages sur mesure proposez-vous au Maroc ?', answer: `Nous proposons des circuits privés et des itinéraires personnalisés au Maroc, avec des étapes choisies selon vos envies. Parmi les circuits disponibles : ${list(circuitNames, 'Marrakech, les villes impériales et le désert du Sahara')}.` },
+        { question: 'Quelles destinations découvrir pendant un voyage au Maroc ?', answer: `Selon les circuits et excursions disponibles, vous pouvez organiser un séjour autour de destinations comme ${list(destinationNames, 'Marrakech, Fès, Merzouga, Chefchaouen et Essaouira')}. Consultez chaque fiche destination pour voir les voyages associés.` },
+        { question: 'Quelles excursions peut-on réserver depuis Marrakech ?', answer: `Les excursions publiées comprennent notamment : ${list(excursionNames, 'des sorties dans le Haut Atlas, vers la côte atlantique et dans le désert d’Agafay')}. Les détails de départ et de durée figurent sur chaque fiche.` },
+        { question: 'Comment demander un devis pour un circuit au Maroc ?', answer: 'Choisissez un circuit ou une excursion, puis envoyez votre demande avec vos dates, le nombre de voyageurs et vos préférences. Vous pouvez aussi contacter notre équipe pour préparer un voyage sur mesure.' },
+        { question: 'Quelle est la meilleure période pour visiter le Maroc et le Sahara ?', answer: 'Le printemps et l’automne offrent généralement des températures agréables pour découvrir Marrakech, les villes impériales et les paysages du Sud. Dans le Sahara, les journées sont souvent plus confortables d’octobre à avril ; prévoyez des vêtements chauds pour les nuits.' },
+      ]
+    : es
+      ? [
+          { question: '¿Qué circuitos privados y viajes a medida ofrecéis en Marruecos?', answer: `Ofrecemos circuitos privados e itinerarios personalizados por Marruecos, con paradas adaptadas a tus intereses. Entre los circuitos disponibles: ${list(circuitNames, 'Marrakech, las ciudades imperiales y el desierto del Sáhara')}.` },
+          { question: '¿Qué destinos visitar durante un viaje por Marruecos?', answer: `Según los circuitos y excursiones disponibles, puedes organizar tu viaje en destinos como ${list(destinationNames, 'Marrakech, Fez, Merzouga, Chefchaouen y Essaouira')}. Consulta cada destino para ver los viajes relacionados.` },
+          { question: '¿Qué excursiones se pueden hacer desde Marrakech?', answer: `Las excursiones publicadas incluyen, entre otras: ${list(excursionNames, 'salidas al Alto Atlas, la costa atlántica y el desierto de Agafay')}. Cada ficha incluye información sobre salida y duración.` },
+          { question: '¿Cómo puedo solicitar un presupuesto para un circuito por Marruecos?', answer: 'Elige un circuito o una excursión y envía tu solicitud con las fechas, el número de viajeros y tus preferencias. También puedes contactar con el equipo para diseñar un viaje a medida.' },
+          { question: '¿Cuál es la mejor época para visitar Marruecos y el Sáhara?', answer: 'La primavera y el otoño suelen ofrecer temperaturas agradables para descubrir Marrakech, las ciudades imperiales y el sur. En el Sáhara, los días suelen ser más cómodos de octubre a abril; lleva ropa de abrigo para las noches.' },
+        ]
+      : [
+          { question: 'What private Morocco tours and tailor-made trips can I book?', answer: `Browse our current private tours and build an itinerary around the places and pace you prefer. Available journeys include: ${list(circuitNames, 'Marrakech, Morocco’s imperial cities, and the Sahara Desert')}.` },
+          { question: 'Which destinations can I visit on a Morocco trip?', answer: `Depending on the current tours and excursions, you can plan a journey around destinations such as ${list(destinationNames, 'Marrakech, Fes, Merzouga, Chefchaouen, and Essaouira')}. Open a destination page to see its related trips.` },
+          { question: 'What day trips and excursions are available from Marrakech?', answer: `Current excursions include options such as ${list(excursionNames, 'High Atlas outings, Atlantic coast trips, and visits to the Agafay Desert')}. Each trip page lists its departure and duration details.` },
+          { question: 'How do I request a quote for a Morocco tour?', answer: 'Choose a tour or excursion and send an inquiry with your travel dates, group size, and preferences. You can also contact the team to discuss a tailor-made Morocco itinerary.' },
+          { question: 'When is the best time to visit Morocco and the Sahara?', answer: 'Spring and autumn generally bring comfortable temperatures for Marrakech, the imperial cities, and southern Morocco. Sahara days are often milder from October to April; pack warm layers for desert nights.' },
+        ];
 
-  // Schema.org FAQPage structured data for Google rich snippets
   const faqSchema = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
     mainEntity: faqs.map((faq) => ({
       '@type': 'Question',
       name: faq.question,
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: faq.answer,
-      },
+      acceptedAnswer: { '@type': 'Answer', text: faq.answer },
     })),
   };
 
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
-      {/* FAQ Schema Script */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-      />
-
-      <div className="text-center mb-14">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sand-100 text-sand-800 text-xs font-bold uppercase tracking-wider mb-3">
-          <HelpCircle className="w-3.5 h-3.5 text-sand-600" />
-          <span>Guide & Réponses</span>
-        </div>
-        <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-morocco-dark tracking-tight">
-          {t('faqTitle')}
-        </h2>
-        <p className="mt-3 text-sand-800 text-sm sm:text-base leading-relaxed">
-          {t('faqSub')}
-        </p>
+    <section className="mx-auto max-w-4xl px-4 py-14 sm:px-6 sm:py-16 lg:px-8" aria-labelledby="travel-faq-title">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+      <div className="mb-9 text-center">
+        <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-sand-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-sand-800"><HelpCircle className="h-3.5 w-3.5 text-sand-600" /><span>{fr ? 'Conseils de voyage au Maroc' : es ? 'Consejos para viajar por Marruecos' : 'Morocco travel advice'}</span></div>
+        <h2 id="travel-faq-title" className="font-serif text-3xl font-bold tracking-tight text-morocco-dark sm:text-4xl">{t('faqTitle')}</h2>
+        <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-sand-800 sm:text-base">{fr ? 'Réponses pratiques sur les circuits, excursions et destinations du Maroc.' : es ? 'Respuestas prácticas sobre circuitos, excursiones y destinos de Marruecos.' : 'Practical answers about Morocco tours, excursions, and destinations.'}</p>
       </div>
-
-      <div className="flex flex-col gap-4">
-        {faqs.map((faq, index) => {
-          const isOpen = openIndex === index;
-          return (
-            <div
-              key={index}
-              className="rounded-2xl border border-sand-200/80 bg-white overflow-hidden transition-all duration-300 shadow-sm"
-            >
-              <button
-                type="button"
-                onClick={() => setOpenIndex(isOpen ? null : index)}
-                className="w-full flex items-center justify-between p-5 sm:p-6 text-left focus:outline-none"
-              >
-                <span className="font-serif text-base sm:text-lg font-bold text-morocco-dark pr-4">
-                  {faq.question}
-                </span>
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-transform duration-300 ${
-                    isOpen
-                      ? 'bg-terracotta-500 text-white rotate-180'
-                      : 'bg-sand-100 text-sand-700'
-                  }`}
-                >
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </button>
-
-              {isOpen && (
-                <div className="px-5 sm:px-6 pb-6 pt-1 text-xs sm:text-sm text-sand-800 leading-relaxed border-t border-sand-50 animate-in fade-in duration-200">
-                  {faq.answer}
-                </div>
-              )}
-            </div>
-          );
-        })}
+      <div className="flex flex-col gap-3">
+        {faqs.map((faq, index) => (
+          <details key={faq.question} open={index === 0} className="group overflow-hidden rounded-2xl border border-sand-200/80 bg-white shadow-sm">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-left marker:hidden sm:p-6">
+              <span className="font-serif text-base font-bold text-morocco-dark sm:text-lg">{faq.question}</span>
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-sand-100 text-sand-700 transition-transform group-open:rotate-180"><ChevronDown className="h-4 w-4" /></span>
+            </summary>
+            <div className="border-t border-sand-100 px-5 pb-5 pt-4 text-sm leading-7 text-sand-800 sm:px-6">{faq.answer}</div>
+          </details>
+        ))}
       </div>
     </section>
   );

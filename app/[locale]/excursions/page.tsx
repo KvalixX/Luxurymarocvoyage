@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
+import { localizedAlternates } from '@/lib/seo/urls';
 import { getTours } from '@/lib/queries/tours';
 import { getDestinations } from '@/lib/queries/destinations';
-import TourCard from '@/components/tours/TourCard';
+import TourResults from '@/components/tours/TourResults';
 import CircuitSidebarFilters from '@/components/tours/CircuitSidebarFilters';
 import Breadcrumbs from '@/components/seo/Breadcrumbs';
-import { Sparkles, LayoutGrid, SortAsc, MapPin, CarFront, Clock3 } from 'lucide-react';
+import { Sparkles, SortAsc, MapPin, CarFront, Clock3 } from 'lucide-react';
 
-const PAGE_SIZE = 9;
+const PAGE_SIZE = 12;
 
 interface ExcursionsPageProps {
   params: Promise<{ locale: string }>;
@@ -39,19 +40,11 @@ export async function generateMetadata({
     es: 'Excursiones de un día desde Marrakech: Valle de Ourika, Cascadas de Ouzoud, Essaouira y desierto de Agafay en vehículo privado con conductor.',
   };
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.luxurymarocvoyage.com';
 
   return {
     title: titles[locale] || titles.fr,
     description: descriptions[locale] || descriptions.fr,
-    alternates: {
-      canonical: `${siteUrl}/${locale}/excursions`,
-      languages: {
-        fr: `${siteUrl}/fr/excursions`,
-        en: `${siteUrl}/en/excursions`,
-        es: `${siteUrl}/es/excursiones`,
-      },
-    },
+    alternates: localizedAlternates(locale, '/excursions'),
   };
 }
 
@@ -76,6 +69,26 @@ export default async function ExcursionsPage({
 
   // ── In-memory filtering ─────────────────────────────────
   let filtered = allExcursions;
+
+  if (sp.duration) {
+    filtered = filtered.filter((tour) => tour.days === Number(sp.duration));
+  }
+
+  if (sp.nights) {
+    filtered = filtered.filter((tour) => tour.nights === Number(sp.nights));
+  }
+
+  if (sp.type) {
+    const types = sp.type.split(',');
+    filtered = filtered.filter((tour) => {
+      const type = (tour.type || '').toLowerCase();
+      return types.some((selected) =>
+        selected === 'private'
+          ? type.includes('privé') || type.includes('prive') || type.includes('private')
+          : type.includes('group') || type.includes('groupe')
+      );
+    });
+  }
 
   if (sp.q) {
     const qLower = sp.q.toLowerCase();
@@ -105,7 +118,7 @@ export default async function ExcursionsPage({
     },
   ];
 
-  const hasActiveFilters = !!(sp.destination || sp.q);
+  const hasActiveFilters = !!(sp.destination || sp.duration || sp.nights || sp.type || sp.q);
 
   const heroTranslations = {"fr":{"eyebrow":"Échappées privées","title":"Excursions au départ de Marrakech","subtitle":"Une journée pour changer de décor : montagne, villages berbères, côte Atlantique ou désert, avec prise en charge privée.","features":["Départ depuis votre hébergement","Transport privé","Une journée à votre rythme"],"label":"Votre prochaine escapade","cardTitle":"Prenez la route","cardText":"Choisissez une destination, nous préparons la journée et le trajet.","places":["Vallée de l’Ourika","Essaouira","Désert d’Agafay"],"action":"Organiser une excursion"},"en":{"eyebrow":"Private day escapes","title":"Day trips from Marrakech","subtitle":"Change the scenery for a day: mountain valleys, Berber villages, the Atlantic coast, or the desert, with private pickup.","features":["Pickup from your stay","Private transport","A day at your pace"],"label":"Your next escape","cardTitle":"Take the scenic route","cardText":"Choose a destination and we’ll help arrange the day and the drive.","places":["Ourika Valley","Essaouira","Agafay Desert"],"action":"Plan a day trip"},"es":{"eyebrow":"Escapadas privadas","title":"Excursiones desde Marrakech","subtitle":"Cambia de paisaje por un día: valles de montaña, pueblos bereberes, costa atlántica o desierto, con recogida privada.","features":["Recogida en tu alojamiento","Transporte privado","Un día a tu ritmo"],"label":"Tu próxima escapada","cardTitle":"Sal a descubrir","cardText":"Elige un destino y te ayudamos a organizar el día y el trayecto.","places":["Valle de Ourika","Essaouira","Desierto de Agafay"],"action":"Organizar excursión"}};
   const heroCopy = locale === 'en' ? heroTranslations.en : locale === 'es' ? heroTranslations.es : heroTranslations.fr;
@@ -149,9 +162,15 @@ export default async function ExcursionsPage({
           {/* LEFT SIDEBAR — reuse circuit sidebar (no duration/nights for excursions) */}
           <CircuitSidebarFilters
             destinations={destinations.map((d) => ({ id: d.id, name: d.name }))}
+            locale={locale}
             currentDestination={sp.destination}
+            currentDuration={sp.duration}
+            currentNights={sp.nights}
+            currentType={sp.type}
             currentSearch={sp.q}
             totalCount={totalCount}
+            durationOptions={allExcursions.map((tour) => tour.days)}
+            nightOptions={allExcursions.map((tour) => tour.nights)}
             excursionMode={true}
           />
 
@@ -177,32 +196,12 @@ export default async function ExcursionsPage({
                 <SortAsc className="w-3.5 h-3.5" />
                 <span>Les plus populaires en premier</span>
               </div>
-              <div className="flex items-center gap-1">
-                <button className="p-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-terracotta-50 hover:text-terracotta-600 transition-colors" title="Vue grille">
-                  <LayoutGrid className="w-4 h-4" />
-                </button>
-                <button className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors" title="Vue liste">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 16 16">
-                    <path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                  </svg>
-                </button>
-              </div>
             </div>
 
             {/* Grid */}
             {paginated.length > 0 ? (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-                  {paginated.map((excursion, index) => (
-                    <TourCard
-                      key={excursion.id}
-                      tour={excursion}
-                      locale={locale}
-                      isExcursion={true}
-                      index={index}
-                    />
-                  ))}
-                </div>
+                <TourResults tours={paginated} locale={locale} isExcursion />
 
                 {/* Pagination */}
                 {totalPages > 1 && (
@@ -210,6 +209,9 @@ export default async function ExcursionsPage({
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => {
                       const urlParams = new URLSearchParams();
                       if (sp.destination) urlParams.set('destination', sp.destination);
+                      if (sp.duration) urlParams.set('duration', sp.duration);
+                      if (sp.nights) urlParams.set('nights', sp.nights);
+                      if (sp.type) urlParams.set('type', sp.type);
                       if (sp.q) urlParams.set('q', sp.q);
                       urlParams.set('page', String(p));
                       return (

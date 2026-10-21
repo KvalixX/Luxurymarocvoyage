@@ -1,5 +1,6 @@
 import { Link } from '@/lib/i18n/navigation';
 import { ChevronRight, Home } from 'lucide-react';
+import { localizedUrl } from '@/lib/seo/urls';
 
 export interface BreadcrumbItem {
   label: string;
@@ -21,7 +22,7 @@ export default function Breadcrumbs({ items, locale }: BreadcrumbsProps) {
       position: index + 1,
       name: item.label,
       item: item.href
-        ? `https://www.luxurymarocvoyage.com/${locale}${item.href}`
+        ? localizedUrl(locale, item.href)
         : undefined,
     })),
   };

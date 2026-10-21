@@ -4,10 +4,16 @@ import { getTourBySlug, getTourSlugs, getRelatedTours } from '@/lib/queries/tour
 import TourGallery from '@/components/tours/TourGallery';
 import BookingForm from '@/components/tours/BookingForm';
 import TourDetailTabs from '@/components/tours/TourDetailTabs';
+import TourRouteMap from '@/components/tours/TourRouteMap';
 import RelatedTours from '@/components/tours/RelatedTours';
 import { TouristTripJsonLd } from '@/components/seo/JsonLd';
 import { Star, Clock, Compass } from 'lucide-react';
 import { Link } from '@/lib/i18n/navigation';
+import { localizedAlternates, localizedUrl } from '@/lib/seo/urls';
+import { seoDescription } from '@/lib/seo/text';
+
+// Tour content and galleries must be read from the hosting database at request time.
+export const dynamic = 'force-dynamic';
 
 interface CircuitDetailPageProps {
   params: Promise<{
@@ -17,7 +23,7 @@ interface CircuitDetailPageProps {
 }
 
 export async function generateStaticParams() {
-  const slugs = await getTourSlugs();
+  const slugs = await getTourSlugs('circuit');
   const locales = ['fr', 'en', 'es'];
 
   const params: { locale: string; slug: string }[] = [];
@@ -39,25 +45,21 @@ export async function generateMetadata({
 
   if (!tour) return { title: 'Circuit Non Trouvé' };
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.luxurymarocvoyage.com';
-  const canonicalUrl = `${siteUrl}/${locale}/circuits/${slug}`;
+  const canonicalUrl = localizedUrl(locale, '/circuits/[slug]', { slug });
 
-  const cleanDescription =
-    tour.presentation ||
-    tour.description?.replace(/<[^>]*>?/gm, '').slice(0, 160) ||
-    `Circuit privé de ${tour.days} jours au Maroc avec Luxurymarocvoyage.`;
+  const cleanDescription = seoDescription(
+    tour.presentation || tour.description,
+    locale === 'en'
+      ? `${tour.days}-day private Morocco tour with Luxury Maroc Voyage.`
+      : locale === 'es'
+        ? `Circuito privado de ${tour.days} días por Marruecos con Luxury Maroc Voyage.`
+        : `Circuit privé de ${tour.days} jours au Maroc avec Luxury Maroc Voyage.`,
+  );
 
   return {
-    title: `${tour.title} | Circuit Privé Maroc`,
+    title: `${tour.title} | ${locale === 'en' ? 'Private Morocco Tour' : locale === 'es' ? 'Circuito privado por Marruecos' : 'Circuit priv\u00e9 au Maroc'}`,
     description: cleanDescription,
-    alternates: {
-      canonical: canonicalUrl,
-      languages: {
-        fr: `${siteUrl}/fr/circuits/${slug}`,
-        en: `${siteUrl}/en/circuits/${slug}`,
-        es: `${siteUrl}/es/circuitos/${slug}`,
-      },
-    },
+    alternates: localizedAlternates(locale, '/circuits/[slug]', { slug }),
     openGraph: {
       title: tour.title,
       description: cleanDescription,
@@ -80,25 +82,9 @@ export default async function CircuitDetailPage({ params }: CircuitDetailPagePro
 
   return (
     <div className="min-h-screen bg-white">
-      <TouristTripJsonLd tour={tour} locale={locale} />
+      <TouristTripJsonLd tour={tour} locale={locale} tripType="circuit" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
-        <div className="mb-6">
-          <nav className="flex items-center gap-2 text-sm text-slate-500">
-            <Link href="/" className="hover:text-terracotta-600 transition-colors">Home</Link>
-            <span>›</span>
-            <Link href="/circuits" className="hover:text-terracotta-600 transition-colors">Circuits</Link>
-            {tour.departure && <><span>›</span><span className="font-medium text-slate-700">{tour.departure}</span></>}
-          </nav>
-          <h1 className="mt-3 max-w-5xl font-serif text-2xl font-bold leading-tight text-slate-900 sm:text-3xl">
-            {tour.title}
-          </h1>
-        </div>
-
-        {/* ─────────────────────────────────────────────────────
-            TOP ROW: Gallery (left) + Form (right) — both start
-            at the same vertical position
-        ───────────────────────────────────────────────────── */}
+      <div className="mx-auto max-w-7xl px-3 pb-12 pt-20 sm:px-6 sm:pb-16 sm:pt-24 lg:px-8">
         <div className="flex flex-col lg:flex-row gap-8 items-start">
 
           {/* LEFT — Gallery + title area */}
@@ -106,10 +92,22 @@ export default async function CircuitDetailPage({ params }: CircuitDetailPagePro
 
             {/* Gallery card */}
             <TourGallery
+              slug={tour.slug}
               coverImage={tour.image}
               gallery={tour.gallery}
               title={tour.title}
             />
+            <div className="-mt-1">
+              <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
+                <Link href="/" className="transition-colors hover:text-terracotta-600">Home</Link>
+                <span aria-hidden="true">›</span>
+                <Link href="/circuits" className="transition-colors hover:text-terracotta-600">Circuits</Link>
+                {tour.departure && <><span aria-hidden="true">›</span><span className="font-medium text-slate-700">{tour.departure}</span></>}
+              </nav>
+              <h1 className="mt-2 max-w-5xl font-serif text-2xl font-bold leading-tight text-slate-900 sm:text-3xl">
+                {tour.title}
+              </h1>
+            </div>
 
             {/* Stats row */}
             <div className="flex flex-wrap items-stretch divide-x divide-slate-200 border border-slate-200 rounded-xl bg-slate-50 overflow-hidden">
@@ -158,7 +156,7 @@ export default async function CircuitDetailPage({ params }: CircuitDetailPagePro
             </div>
 
             {/* Tabs: Overview / Included-Highlights / Itinerary */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
               <TourDetailTabs
                 presentation={tour.presentation || ''}
                 description={tour.description || ''}
@@ -171,11 +169,15 @@ export default async function CircuitDetailPage({ params }: CircuitDetailPagePro
             </div>
           </div>
 
-          {/* RIGHT — Sticky booking form, aligned to top of gallery */}
-          <div className="w-full lg:w-[340px] xl:w-[360px] shrink-0 lg:sticky lg:top-24">
-            <BookingForm tour={tour} locale={locale} />
+          {/* RIGHT — Booking form and sharing */}
+          <div className="w-full lg:w-[340px] xl:w-[360px] shrink-0 lg:sticky lg:top-24 lg:self-start">
+            <BookingForm tour={tour} locale={locale} tripType="circuit" />
           </div>
         </div>
+
+        {tour.itinerary.length > 0 && (
+          <TourRouteMap itinerary={tour.itinerary} locale={locale} departure={tour.departure} />
+        )}
 
         {/* ── You may also like ───────────────────────────── */}
         {relatedTours.length > 0 && (

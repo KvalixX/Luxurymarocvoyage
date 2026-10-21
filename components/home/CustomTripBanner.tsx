@@ -10,7 +10,7 @@ export default async function CustomTripBanner({ locale }: CustomTripBannerProps
   const t = await getTranslations({ locale, namespace: 'sections' });
   const tCommon = await getTranslations({ locale, namespace: 'common' });
 
-  const phoneNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '212600000000';
+  const phoneNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '212776715010';
   const cleanNumber = phoneNumber.replace(/[^0-9]/g, '');
   const defaultMessage = encodeURIComponent(
     'Bonjour Luxurymarocvoyage, je souhaite concevoir un itinéraire sur-mesure pour mon voyage au Maroc.'

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { localizedAlternates } from '@/lib/seo/urls';
 import Image from 'next/image';
 import { getArticles } from '@/lib/queries/articles';
 import { Link } from '@/lib/i18n/navigation';
@@ -26,19 +27,11 @@ export async function generateMetadata({
     es: 'Descubra nuestro blog con las mejores recomendaciones para viajar a Marruecos: qué meter en la maleta, acampada en el desierto y cultura bereber.',
   };
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.luxurymarocvoyage.com';
 
   return {
     title: titles[locale] || titles.fr,
     description: descriptions[locale] || descriptions.fr,
-    alternates: {
-      canonical: `${siteUrl}/${locale}/blog`,
-      languages: {
-        fr: `${siteUrl}/fr/blog`,
-        en: `${siteUrl}/en/blog`,
-        es: `${siteUrl}/es/blog`,
-      },
-    },
+    alternates: localizedAlternates(locale, '/blog'),
   };
 }
 

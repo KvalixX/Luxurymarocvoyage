@@ -1,21 +1,23 @@
 import { TourDetail } from '@/lib/queries/tours';
+import { localizedUrl } from '@/lib/seo/urls';
 
 interface TouristTripJsonLdProps {
   tour: TourDetail;
   locale: string;
+  tripType?: 'circuit' | 'excursion';
 }
 
-export function TouristTripJsonLd({ tour, locale }: TouristTripJsonLdProps) {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.luxurymarocvoyage.com';
-  const url = `${siteUrl}/${locale}/circuits/${tour.slug}`;
+export function TouristTripJsonLd({ tour, locale, tripType = 'circuit' }: TouristTripJsonLdProps) {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://luxurymarocvoyage.com';
+  const url = localizedUrl(locale, `/${tripType === 'excursion' ? 'excursions' : 'circuits'}/[slug]`, { slug: tour.slug });
 
   const schema = {
     '@context': 'https://schema.org',
-    '@type': ['TouristTrip', 'Product'],
+    '@type': 'TouristTrip',
     name: tour.title,
+    url,
     description: tour.description || tour.presentation,
     image: tour.image ? [tour.image, ...tour.gallery] : tour.gallery,
-    touristType: ['Luxury', 'Adventure', 'Cultural'],
     itinerary: {
       '@type': 'ItemList',
       numberOfItems: tour.itinerary?.length || 0,
@@ -29,32 +31,27 @@ export function TouristTripJsonLd({ tour, locale }: TouristTripJsonLdProps) {
         },
       })),
     },
-    offers: {
-      '@type': 'Offer',
-      priceCurrency: 'EUR',
-      price: tour.price ? tour.price.replace(/[^0-9]/g, '') || '450' : '450',
-      availability: 'https://schema.org/InStock',
-      url,
-      validFrom: '2025-01-01',
-    },
     provider: {
       '@type': 'TravelAgency',
+      '@id': `${siteUrl}/#travel-agency`,
       name: 'Luxurymarocvoyage',
       url: siteUrl,
-      telephone: '+212600000000',
-      priceRange: '$$$',
+      telephone: '+212776715010',
+      openingHoursSpecification: [
+        {
+          '@type': 'OpeningHoursSpecification',
+          dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+          opens: '09:00',
+          closes: '19:00',
+        },
+        {
+          '@type': 'OpeningHoursSpecification',
+          dayOfWeek: 'Sunday',
+          opens: '10:00',
+          closes: '16:00',
+        },
+      ],
     },
-    ...(tour.rating > 0 && tour.reviews > 0
-      ? {
-          aggregateRating: {
-            '@type': 'AggregateRating',
-            ratingValue: tour.rating.toString(),
-            reviewCount: tour.reviews.toString(),
-            bestRating: '5',
-            worstRating: '1',
-          },
-        }
-      : {}),
   };
 
   return (

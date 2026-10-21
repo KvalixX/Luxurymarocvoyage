@@ -3,7 +3,10 @@ import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { getEventBySlug, getEventSlugs } from '@/lib/queries/events';
 import Breadcrumbs from '@/components/seo/Breadcrumbs';
-import { MapPin, Calendar, Sparkles, CheckCircle2, MessageCircle, ArrowRight } from 'lucide-react';
+import EventInquiryForm from '@/components/events/EventInquiryForm';
+import { MapPin, Sparkles, CheckCircle2 } from 'lucide-react';
+import { localizedAlternates, localizedUrl } from '@/lib/seo/urls';
+import { seoDescription } from '@/lib/seo/text';
 
 interface EventDetailPageProps {
   params: Promise<{
@@ -35,23 +38,15 @@ export async function generateMetadata({
 
   if (!event) return { title: 'Événement Non Trouvé' };
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.luxurymarocvoyage.com';
-  const canonicalUrl = `${siteUrl}/${locale}/events/${slug}`;
+  const canonicalUrl = localizedUrl(locale, '/events/[slug]', { slug });
 
   return {
-    title: `${event.title} | Événement & Festival Maroc`,
-    description: event.description?.slice(0, 160) || event.title,
-    alternates: {
-      canonical: canonicalUrl,
-      languages: {
-        fr: `${siteUrl}/fr/evenements/${slug}`,
-        en: `${siteUrl}/en/events/${slug}`,
-        es: `${siteUrl}/es/eventos/${slug}`,
-      },
-    },
+    title: `${event.title} | ${locale === 'en' ? 'Morocco Event' : locale === 'es' ? 'Evento en Marruecos' : '\u00c9v\u00e9nement au Maroc'}`,
+    description: seoDescription(event.description, event.title),
+    alternates: localizedAlternates(locale, '/events/[slug]', { slug }),
     openGraph: {
       title: event.title,
-      description: event.description,
+      description: seoDescription(event.description, event.title),
       url: canonicalUrl,
       images: event.image ? [{ url: event.image }] : [],
     },
@@ -66,7 +61,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
     notFound();
   }
 
-  const phoneNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '212600000000';
+  const phoneNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '212776715010';
   const cleanNumber = phoneNumber.replace(/[^0-9]/g, '');
   const whatsappMessage = encodeURIComponent(
     `Bonjour Luxurymarocvoyage, je souhaite obtenir des informations et réserver pour l'événement : "${event.title}".`
@@ -118,8 +113,10 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
       <Breadcrumbs items={breadcrumbs} locale={locale} />
 
       <article className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+        <div className="grid grid-cols-1 items-start gap-x-8 gap-y-4 lg:grid-cols-3 lg:gap-x-10 lg:gap-y-0">
+          <div className="contents order-1 lg:order-none lg:col-span-2 lg:col-start-1 lg:row-start-1 lg:flex lg:flex-col lg:gap-5">
         {/* Header */}
-        <div className="max-w-4xl mb-8">
+        <div className="order-1 max-w-4xl lg:order-none">
           <div className="flex flex-wrap items-center gap-2 mb-3">
             {event.category && (
               <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-majorelle-50 text-majorelle-600">
@@ -134,13 +131,13 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
             )}
           </div>
 
-          <h1 className="font-serif text-3xl sm:text-5xl font-bold text-morocco-dark tracking-tight leading-tight mb-4">
+          <h1 className="font-serif text-3xl sm:text-5xl font-bold text-morocco-dark tracking-tight leading-tight mb-1">
             {event.title}
           </h1>
         </div>
 
         {/* Hero image banner */}
-        <div className="relative aspect-[21/9] sm:aspect-[21/8] w-full rounded-3xl overflow-hidden mb-12 shadow-md">
+        <div className="relative order-3 aspect-[21/9] sm:aspect-[21/8] w-full rounded-3xl overflow-hidden shadow-md lg:order-none">
           <Image
             src={imageUrl}
             alt={event.title}
@@ -152,9 +149,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
           <div className="absolute inset-0 bg-gradient-to-t from-morocco-dark/60 via-transparent to-transparent" />
         </div>
 
-        {/* Content & Action Box */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-          <div className="lg:col-span-2 flex flex-col gap-8">
+          <div className="order-4 flex flex-col gap-6 lg:order-none">
             {/* Description */}
             {event.description && (
               <section className="rounded-3xl bg-white border border-sand-200 p-6 sm:p-8 shadow-sm">
@@ -203,47 +198,15 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
               </section>
             )}
           </div>
-
-          {/* Right Action Sidebar */}
-          <aside aria-label="Réservation de l'événement" className="lg:col-span-1">
-            <div className="sticky top-28 rounded-3xl bg-white border border-sand-200 p-6 sm:p-8 shadow-xl flex flex-col gap-6">
-              <div>
-                <span className="text-xs uppercase tracking-wider font-semibold text-sand-700 block">
-                  Tarif par personne
-                </span>
-                <span className="font-serif text-3xl font-bold text-morocco-dark mt-1 block">
-                  {event.price || 'Sur Devis'}
-                </span>
-              </div>
-
-              <div className="pt-4 border-t border-sand-100 flex flex-col gap-3 text-xs text-sand-800">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-terracotta-500 shrink-0" />
-                  <span>Places limitées en petit groupe</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-terracotta-500 shrink-0" />
-                  <span>Lieu : {event.location}</span>
-                </div>
-              </div>
-
-              <a
-                href={`https://wa.me/${cleanNumber}?text=${whatsappMessage}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full py-4 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-2 transition-all text-center"
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span>Réserver via WhatsApp</span>
-              </a>
-
-              <a
-                href="/contact"
-                className="w-full py-3.5 px-6 rounded-2xl bg-sand-100 hover:bg-sand-200 text-sand-900 font-semibold text-xs uppercase tracking-wider text-center transition-colors"
-              >
-                Demander des Informations
-              </a>
-            </div>
+          </div>
+          <aside className="order-2 lg:order-none lg:sticky lg:top-28 lg:col-start-3 lg:row-start-1">
+            <EventInquiryForm
+              title={event.title}
+              slug={event.slug}
+              price={event.price || ''}
+              locale={locale}
+              whatsappHref={`https://wa.me/${cleanNumber}?text=${whatsappMessage}`}
+            />
           </aside>
         </div>
       </article>

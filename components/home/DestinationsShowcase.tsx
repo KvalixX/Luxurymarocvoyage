@@ -76,7 +76,7 @@ export default async function DestinationsShowcase({
               <Link
                 key={dest.id}
                 href={`/destinations/${dest.slug}` as any}
-                className="group relative aspect-[4/3.3] sm:aspect-[4/3.4] rounded-2xl overflow-hidden bg-slate-900 border border-white/10 shadow-[0_4px_16px_rgba(26,15,10,0.06)] hover:shadow-[0_16px_36px_-6px_rgba(223,105,81,0.22)] hover:border-terracotta-400/50 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between p-3.5 sm:p-4 text-white"
+                className="group relative aspect-[4/3.3] sm:aspect-[4/3.4] rounded-2xl overflow-hidden bg-[#F7EBDD] ring-1 ring-inset ring-white/35 shadow-[0_8px_24px_rgba(80,48,31,0.12)] hover:shadow-[0_18px_40px_-8px_rgba(223,105,81,0.3)] hover:ring-white/70 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between p-3.5 sm:p-4 text-white"
               >
                 {/* Background Cover Image */}
                 <Image
